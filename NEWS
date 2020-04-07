@@ -1,3 +1,45 @@
+CHANGES IN VERSION 0.2.8
+------------------------------
+
+INTERNAL MODIFICATION
+
+    o aggregated datasets: tests
+
+CHANGES IN VERSION 0.2.6
+------------------------------
+
+IMPORTANT MODIFICATION
+
+    o phenomis dependency package now available on github at 'SciDoPhenIA/phenomis'
+
+CHANGES IN VERSION 0.2.4
+------------------------------
+
+IMPORTANT MODIFICATION
+
+    o metabolomics dataset names: ionization mode now denoted as '_pos/neg' instead of '-pos/neg'
+
+CHANGES IN VERSION 0.2.2
+------------------------------
+
+MINOR MODIFICATION
+
+    o constants: re-ordering of metabolomics datasets
+
+CHANGES IN VERSION 0.2.0
+------------------------------
+
+NEW FEATURE
+
+    o statistics_integrative
+
+CHANGES IN VERSION 0.1.2
+------------------------------
+
+NEW FEATURE
+
+    o travis testing
+
 CHANGES IN VERSION 0.1.0
 ------------------------------
 
