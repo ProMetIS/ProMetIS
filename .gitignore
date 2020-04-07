@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+archive/
+vignettes/*.html
+vignettes/figures/temp/
+vignettes/figures/aggregated/
+

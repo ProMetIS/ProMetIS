@@ -1,0 +1,34 @@
+Package: ProMetIS
+Type: Package
+Title: Multi-omics phenotyping of the LAT and MX2 knockout mice
+Version: 0.2.6
+Date: 2020-03-22
+Author: Alyssa Imbert, Florence Castelli, Magali Rompais, Mohammed Selloum,
+    Emmanuelle Mouton-Barbosa, Thomas Burger, Marion Brandolini-Bunlon, Arthur Tenenhaus,
+    Yves Vandenbrouck, Olivier Sand, Pierrick Roger, Natacha Lenuzza, Emeline Chu-Van,
+    Charlotte Joly, Julia Novion Ducassou, Tania Sorg, Bernard Malissen, Ludovic Cottret,
+    Christophe Bruley, Franck Giacomoni, Laurent Vasseur, Aurélie Hirschler, Yohann Couté,
+    Christophe Lechaplais, Marcel Salanoubat, David Bouyssié, Marie Courçon, Odile Schiltz,
+    Fabien Jourdan, Pierre Le Ber, Alain Perret, Virginie Brun, Dominique Rolin, Jérôme Garin,
+    Claudine Médigue, Christophe Junot, David Vallenet, Anne Gonzalez-de-Peredo, Myriam Ferro,
+    Estelle Pujos-Guillot, Yann Herault, Christine Carapito, François Fenaille
+    and Etienne A. Thévenot (ProMetIS consortium)
+Maintainer: Etienne A. Thevenot <etienne.thevenot@cea.fr>
+Description: This package provides the data and analyses used in the proteomics and
+    metabolomics study of the LAT and MX2 knockout mice.
+Depends:
+    Biobase,
+    MultiDataSet
+Imports:
+    methods,
+    stats,
+    utils
+Suggests:
+    phenomis,
+    testthat
+Remotes:
+    github::SciDoPhenIA/phenomis
+License: CeCILL
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.0.2
