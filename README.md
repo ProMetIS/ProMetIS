@@ -3,6 +3,7 @@
 [![Travis build status](https://travis-ci.org/ProMetIS/ProMetIS.svg?branch=master)](https://travis-ci.org/ProMetIS/ProMetIS)
 
 ![alt text](https://github.com/ProMetIS/ProMetIS/blob/master/vignettes/figures/phenomin_design.png)
+![alt text](vignettes/figures/phenomin_design.png)
 
 ## Description
 
