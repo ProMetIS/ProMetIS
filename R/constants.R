@@ -107,8 +107,8 @@ post_processed_dir.c <- function() {
 }
 
 #' @export
-statistics_intraomics_dir.c <- function() {
-  file.path(ProMetIS::data_dir.c(), "3_statistics_intraomics")
+statistics_singleomics_dir.c <- function() {
+  file.path(ProMetIS::data_dir.c(), "3_statistics_singleomics")
 }
 
 #' @export

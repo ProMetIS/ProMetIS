@@ -32,7 +32,8 @@ knitr::opts_chunk$set(fig.width = 8,
 # Loading datasets
 
 ```{r}
-latmx2.mset <- phenomis::reading(ProMetIS::statistics_integrative_dir.c(), report.c = "none")
+latmx2.mset <- phenomis::reading(ProMetIS::statistics_integrative_dir.c(),
+                                 report.c = "none")
 ```
 
 # Aggregating the results for each gene
@@ -41,7 +42,7 @@ latmx2.mset <- phenomis::reading(ProMetIS::statistics_integrative_dir.c(), repor
 for (gene.c in ProMetIS::genes.vc()) {
   
   gene.mset <- ProMetIS::subsetting(latmx2.mset,
-                                  genes.vc = c("WT", gene.c))
+                                    genes.vc = c("WT", gene.c))
   
   for (set.c in names(gene.mset)) {
     

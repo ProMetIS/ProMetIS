@@ -22,13 +22,12 @@ output:
 knitr::opts_chunk$set(fig.width = 8,
                       fig.height = 8,
                       fig.path = 'figures/temp/2_post_processed/',
-                      message = FALSE,
                       warning = FALSE)
 ```
 
 # Mice IDs
 
-```{r}
+```{r mice_id}
 mice_id.df <- read.table(file.path(ProMetIS::processed_dir.c(),
                                    "mice_id.tsv"),
                          row.names = 1,
@@ -43,7 +42,7 @@ stopifnot(identical(as.integer(mice_num.vc),
 
 ## Loading
 
-```{r}
+```{r clinics_loading}
 clinic_setname.c <- "clinics"
 
 # table from PHENOMIN (47 * 1098)
@@ -62,7 +61,7 @@ stopifnot(identical(clinic_raw.df[, "mouse_nb"],
 
 ## sampleMetadata
 
-```{r}
+```{r clinics_sampleMetadata}
 # restricting to the 42 samples analyzed in ProMetIS
 
 clinic_raw.df <- clinic_raw.df[as.character(clinic_raw.df[, "mouse_nb"]) %in% mice_num.vc, ]
@@ -84,7 +83,7 @@ colnames(clinic_pda.df)[supp.vi] <- paste0("supp_",
 
 ## dataMatrix
 
-```{r}
+```{r clinics_dataMatrix}
 # initial dataMatrix (42 * 1091)
 
 variable.vi <-  which(!(colnames(clinic_raw.df) %in% ProMetIS:::.varLabels_first.ls()[["clinics"]]))
@@ -167,7 +166,7 @@ stopifnot(identical(dim(clinic_dat.mn), as.integer(c(42, 213))))
 
 ## variableMetadata
 
-```{r}
+```{r clinics_variableMetadata}
 # variableMetadata (238 * 2)
 category.vc <- sapply(colnames(clinic_dat.mn),
                       function(name.c)
@@ -208,7 +207,7 @@ stopifnot(identical(dim(clinic_fda.df), as.integer(c(213, 3))))
 
 ## ExpressionSet
 
-```{r}
+```{r clinics_ExpressionSet}
 # converting to ExpressionSet
 clinic.eset <- Biobase::ExpressionSet(assayData = t(clinic_dat.mn),
                                       phenoData = Biobase::AnnotatedDataFrame(data = clinic_pda.df),
@@ -235,7 +234,7 @@ phenomis::writing(clinic.eset,
 
 ## Set names and input files
 
-```{r}
+```{r proteo_files}
 proteo_files.vc <- vapply(ProMetIS::proteo_sets.vc(),
                           function(set.c) {
                             file.c <- list.files(file.path(ProMetIS::processed_dir.c(), set.c),
@@ -249,7 +248,7 @@ proteo.mset <- MultiDataSet::createMultiDataSet()
 
 ## MultiDataSet containing the data matrices
 
-```{r}
+```{r proteo_dataMatrix}
 for (set.c in ProMetIS::proteo_sets.vc()) {
   
   # dataMatrix
@@ -277,7 +276,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## sampleMetadata
 
-```{r}
+```{r proteo_sampleMetadat}
 for (set.c in ProMetIS::proteo_sets.vc()) {
   
   eset <- proteo.mset[[set.c]]
@@ -314,7 +313,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## variableMetadata
 
-```{r}
+```{r proteo_variableMetadata}
 for (set.c in ProMetIS::proteo_sets.vc()) {
   
   eset <- proteo.mset[[set.c]]
@@ -351,7 +350,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## Renaming features and re-ordering samples
 
-```{r}
+```{r proteo_reordering}
 for (set.c in ProMetIS::proteo_sets.vc()) {
   
   eset <- proteo.mset[[set.c]]
@@ -431,7 +430,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## Adding meta data (gene, mouse_nb, sex)
 
-```{r}
+```{r proteo_adding_metadata}
 
 for (set.c in ProMetIS::proteo_sets.vc()) {
   
@@ -454,7 +453,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## formatting the 'imputation' metrics
 
-```{r}
+```{r proteo_imputation_metrics}
   for (set.c in ProMetIS::proteo_sets.vc()) {
     
     eset <- proteo.mset[[set.c]]
@@ -474,7 +473,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## Variable metadata: including new mice ids in the column names (count, abundance, etc.)
 
-```{r}
+```{r proteo_supp}
 for (set.c in ProMetIS::proteo_sets.vc()) {
   
   eset <- proteo.mset[[set.c]]
@@ -509,7 +508,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## Re-ordering metadata ('supp_' columns at the end)
 
-```{r}
+```{r proteo_reordering}
 proteo.mset <- ProMetIS::order_mset(proteo.mset)
 ```
 
@@ -548,6 +547,19 @@ metabo.mset <- phenomis::reading(file.path(ProMetIS::processed_dir.c()),
 ```
 
 ## Normalization of the dataMatrix
+
+The workflow consists of the following steps:
+
+|step                |liver_c18hyper_pos |liver_hilic_neg    |plasma_c18hyper_pos|plasma_hilic_neg   |plasma_c18acqui_pos|plasma_c18acqui_neg|
+|--------------------|-------------------|-------------------|-------------------|-------------------|-------------------|-------------------|
+|0.4 <= RT <= 22     |                   |                   |                   |                   |         X         |         X         |
+|blank/samp   <= 0.33|         X         |         X         |         X         |         X         |         X         |         X         |
+|poolDil: cor >= 0.7 |         X         |         X         |         X         |         X         |                   |                   |
+|drift samp, span = 2|         X         |         X         |         X         |         X         |         X         |         X         |
+|NA <= 20% & var > 0 |         X         |         X         |         X         |         X         |         X         |         X         |
+|pool CV       <= 0.3|         X         |         X         |         X         |         X         |         X         |         X         |
+|poolCV/sampCV <= 1  |         X         |         X         |         X         |         X         |         X         |         X         |
+|pcgroup       > 0.9 |         X         |         X         |         X         |         X         |         X         |         X         |
 
 ```{r metabolomics_dataMatrix, message=FALSE, warning=FALSE}
 for (set.c in ProMetIS::metabo_sets.vc()) {

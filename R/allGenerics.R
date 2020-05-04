@@ -26,7 +26,7 @@
 #' @rdname subsetting
 #' @export
 #' @examples
-#' latmx2.mset <- phenomis::reading(ProMetIS::statistics_intraomics_dir.c(),
+#' latmx2.mset <- phenomis::reading(ProMetIS::statistics_singleomics_dir.c(),
 #'                                  report.c = "none")
 #' plasma_lat.mset <- ProMetIS::subsetting(latmx2.mset,
 #'                                         genes.vc = c("WT", "LAT"),

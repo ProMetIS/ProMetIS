@@ -77,7 +77,7 @@ features with too many NAs, too low variance, or too many imputed values (proteo
 datasets only)
 }
 \examples{
-latmx2.mset <- phenomis::reading(ProMetIS::statistics_intraomics_dir.c(),
+latmx2.mset <- phenomis::reading(ProMetIS::statistics_singleomics_dir.c(),
                                  report.c = "none")
 plasma_lat.mset <- ProMetIS::subsetting(latmx2.mset,
                                         genes.vc = c("WT", "LAT"),

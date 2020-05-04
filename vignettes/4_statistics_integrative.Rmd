@@ -44,7 +44,7 @@ knitr::opts_chunk$set(fig.width = 8,
 ```{r data_import, message=FALSE}
 selvar.i <- 20 # number of features to select
 
-latmx2.mset <- phenomis::reading(ProMetIS::statistics_intraomics_dir.c(),
+latmx2.mset <- phenomis::reading(ProMetIS::statistics_singleomics_dir.c(),
                                  report.c = "none")
 
 sgccda.ls <- list()

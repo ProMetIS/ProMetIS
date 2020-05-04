@@ -1,3 +1,10 @@
+CHANGES IN VERSION 0.2.12
+------------------------------
+
+NEW FEATURE
+
+    o metabolomics datasets update (3_statistics_singleomics, 4_statistics_integrative, 5_aggregated)
+
 CHANGES IN VERSION 0.2.10
 ------------------------------
 
