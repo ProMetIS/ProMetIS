@@ -221,7 +221,7 @@ print(clinic.eset)
 
 ## Saving (not run)
 
-```{r}
+```{r clinics_saving}
 phenomis::writing(clinic.eset,
                   file.path(gsub(ProMetIS::data_dir.c(),
                                  "../../ProMetIS/inst/extdata",
@@ -516,7 +516,7 @@ proteo.mset <- ProMetIS::order_mset(proteo.mset)
 
 ## Saving (not run)
 
-```{r}
+```{r proteo_saving}
 for (set.c in ProMetIS::proteo_sets.vc()) {
   
   eset <- proteo.mset[[set.c]]
@@ -537,11 +537,11 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ```
 
-# Metabolomics (in progress)
+# Metabolomics
 
 ## Loading
 
-```{r}
+```{r metabo_loading}
 metabo.mset <- phenomis::reading(file.path(ProMetIS::processed_dir.c()),
                                  subsets.vc = ProMetIS::metabo_sets.vc(),
                                  report.c = "none")
@@ -549,102 +549,97 @@ metabo.mset <- phenomis::reading(file.path(ProMetIS::processed_dir.c()),
 
 ## Normalization of the dataMatrix
 
-```{r}
+```{r metabolomics_dataMatrix, message=FALSE, warning=FALSE}
 for (set.c in ProMetIS::metabo_sets.vc()) {
 
   eset <- metabo.mset[[set.c]]
   
+  # Imputation
+  
+  if (grepl("c18hyper", set.c)) {
+    
+    exprs.mn <- Biobase::exprs(eset)
+    
+    exprs.mn[is.na(exprs.mn)] <- 1
+    
+    Biobase::exprs(eset) <- exprs.mn
+    
+  }
+  
+  # RT filtering
+  
+  if (grepl("c18acqui", set.c)) {
+    
+    eset <- eset[which(Biobase::fData(eset)[, "rt"] >= 0.4 &
+                         Biobase::fData(eset)[, "rt"] <= 22), ]
+    
+  }
+  
+  # Blank filtering
+  
+  eset <- phenomis::inspecting(eset, report.c = "none")
+  
+  eset <- eset[which(Biobase::fData(eset)[, "blankMean_over_sampleMean"] <= 0.33), ]
+
+  # Pool dilution
+  
   if (grepl("(hyper|hilic)", set.c)) {
     
-    if (grepl("c18hyper", set.c)) {
-      
-      # setting NA values to 0
-      exprs.mn <- Biobase::exprs(eset)
-      exprs.mn[is.na(exprs.mn)] <- ifelse(set.c == "metabolomics_liver_c18hyper_pos", 0, 1)
-      Biobase::exprs(eset) <- exprs.mn
-      
-    }
-    
-    # computing quality metrics
-    eset <- phenomis::inspecting(eset, title.c = set.c)
-    
-    # discarding features with mean intensity in samples / mean intensity in pools > 3
-    eset <- eset[which(Biobase::fData(eset)[, "blankMean_over_sampleMean"] <= 0.33), ]
-    
-    # discarding features with a Pearson correlation with pool dilution < 0.7
     eset <- eset[which(Biobase::fData(eset)[, "poolDil_cor"] >= 0.7), ]
-    
-    
-  } else if (grepl("acqui", set.c)) {
-    
-    # discarding features eluted before 0.4 min or after 22 min
-    eset <- eset[which(Biobase::fData(eset)[, "rt"] >= 0.4 & Biobase::fData(eset)[, "rt"] <= 22), ]
-    
-    # discarding features with mean intensity in samples / mean intensity in pools < 2 (or 4)
-    fold.i <- ifelse(set.c == "metabolomics_plasma_c18acqui_pos", 2, 4)
-    
-    eset <- eset[which(Biobase::fData(eset)[, "fold"] >= fold.i), ]
-    
-    eset <- eset[which(Biobase::fData(eset)[, "tstat"] <= 0), ]
-    
-  } else
-    stop("Unknown metabolomics dataset name.")
-  
-  # discarding blanks and diluted pools (QCs)
-  eset <- eset[, Biobase::pData(eset)[, "sampleType"] %in% c("sample", "pool")]
-  
-  # signal drift correction
-  if (set.c == "metabolomics_liver_c18hyper_pos") {
-    reference.c <- "none"
-  } else if (set.c == "metabolomics_plasma_c18hyper_pos") {
-    reference.c <- "pool"
-  } else if (set.c == "metabolomics_liver_hilic_neg") {
-    reference.c <- "none"
-  } else if (set.c == "metabolomics_plasma_hilic_neg") {
-    reference.c <- "none"
-  } else if (set.c == "metabolomics_plasma_c18acqui_pos") {
-    reference.c <- "sample"
-  } else if (set.c == "metabolomics_plasma_c18acqui_neg") {
-    reference.c <- "pool"
-  } else
-    stop()
-  
-  if (reference.c != "none")
-    eset <- phenomis::correcting(eset, reference.c = reference.c, title.c = set.c)
 
-  # updating quality metrics
-  eset <- phenomis::inspecting(eset, title.c = set.c)
+    
+  }
+
+  # Discarding blanks
   
-  # discarding features with a coefficient of variation in pools > 30% 
+  eset <- eset[, which(Biobase::pData(eset)[, "sampleType"] %in% c("sample", "pool"))]
+  
+  # Signal drift correction
+  
+  if (grepl("(hyper|hilic)", set.c)) {
+    
+    # setting last 'pool1' before 'sample' to 'pool'
+    pdata.df <- Biobase::pData(eset)
+    pdata_ord.df <- pdata.df[order(pdata.df[, "injectionOrder"]), ]
+    rowname.c <- rownames(pdata_ord.df)[which(pdata_ord.df[, "sampleType"] == "sample")[1] - 1]
+    pdata.df[rowname.c, "sampleType"] <- "pool"
+    Biobase::pData(eset) <- pdata.df
+    
+  } else {
+    
+    # setting the first injectionOrder to 1
+    Biobase::pData(eset)[, "injectionOrder"] <- Biobase::pData(eset)[, "injectionOrder"] - min(Biobase::pData(eset)[, "injectionOrder"]) + 1
+    
+  }
+
+  eset <- phenomis::correcting(eset,
+                               reference.c = "sample",
+                               title.c = gsub("metabolomics_", "", set.c),
+                               span.n = 2)
+  
+  # NAs and variances
+  
+  eset <- phenomis::filtering(eset, max_na_prop.n = 0)
+  
+  # pool CV <= 0.3
+  
+  eset <- phenomis::inspecting(eset, report.c = "none")
+  
   eset <- eset[which(Biobase::fData(eset)[, "pool_CV"] <= 0.3), ]
+
+  # poolCV_over_sampleCV <= 1
   
-  if (grepl("acqui", set.c)) {
-    
-    # discarding features with a ratio 'coefficient of variation in samples / coefficient of variation in pools' < 0.8
-    eset <- eset[which(Biobase::fData(eset)[, "poolCV_over_sampleCV"] <= 1.25), ]
-    
-  }
+  eset <- eset[which(Biobase::fData(eset)[, "poolCV_over_sampleCV"] <= 1), ]
+
+  # Discarding pools
   
-  # discarding 'pool' samples (i.e. QCs)
-  eset <- eset[, Biobase::pData(eset)[, "sampleType"] != "pool"]
+  eset <- eset[, which(Biobase::pData(eset)[, "sampleType"] != "pool")]
   
-  if (grepl("acqui", set.c)) {
-    
-    # discarding the few features containing NA (generated after the drift correction)
-    eset <- eset[apply(Biobase::exprs(eset), 1, function(feat.vn) !any(is.na(feat.vn))), ]
-    
-    # discarding features highly correlated to others from the same pcgroup with higher mean intensity
-    eset <- ProMetIS:::.filter_pcgroup(eset)
-    
-    if (set.c == "metabolomics_plasma_c18acqui_pos") {
-      
-      # discarding features with 90% quantile < 5000
-      eset <- eset[apply(Biobase::exprs(eset), 1,
-                         function(feat.vn) quantile(feat.vn, 0.9)) >= 5000, ]
-      
-    }
-    
-  }
+  # Correlated features within the same pcgroup
+  
+  eset <- ProMetIS:::.filter_pcgroup(eset)
+  
+  # Updating the eset object
   
   stopifnot(methods::validObject(eset))
   
@@ -660,29 +655,29 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
 
 ## Formatting and ordering sample names
 
-```{r}
+```{r metabo_format_names}
 metabo.mset <- ProMetIS:::.format_metabonames(metabo.mset,
-                                            mice_id.df = mice_id.df,
-                                            mice_id.vc = mice_id.vc,
-                                            mice_num.vc = mice_num.vc)
+                                              mice_id.df = mice_id.df,
+                                              mice_id.vc = mice_id.vc,
+                                              mice_num.vc = mice_num.vc)
 ```
 
 ## Log2 transformation
 
-```{r}
-metabo.mset <- phenomis::transforming(metabo.mset)
+```{r metabo_log}
+metabo.mset <- phenomis::transforming(metabo.mset, report.c = "none")
 ```
 
 ## Re-ordering metadata ('supp_' columns at the end)
 
-```{r}
+```{r metabo_reordering}
 metabo.mset <- ProMetIS::order_mset(metabo.mset)
 ```
 
 
 ## Saving (not run)
 
-```{r}
+```{r metabo_saving}
 for (set.c in ProMetIS::metabo_sets.vc()) {
   
   eset <- metabo.mset[[set.c]]
@@ -694,11 +689,11 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
   Biobase::pData(eset) <- pdata.df
   
   phenomis::writing(eset,
-                  file.path(gsub(ProMetIS::data_dir.c(),
-                                 "../../ProMetIS/inst/extdata",
-                                 ProMetIS::post_processed_dir.c()),
-                            set.c),
-                  overwrite.l = TRUE)
+                    file.path(gsub(ProMetIS::data_dir.c(),
+                                   "../../ProMetIS/inst/extdata",
+                                   ProMetIS::post_processed_dir.c()),
+                              set.c),
+                    overwrite.l = TRUE)
   
 }
 ```

@@ -359,7 +359,7 @@ order_mset <- function(mset) {
                              "spi_KEGGpathwaysfamily",
                              "spi_KEGGpathways",
                              "spi_subpathways",
-                             "supp_spi_annot",
+                             "spi_annot",
                              "inchi",
                              "inchikey",
                              "pubchem",

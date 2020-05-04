@@ -24,12 +24,12 @@ testthat::test_that("dimensions", {
   #             sep = "|"),
   #       collapse = "', '")
   test_dim.vc <- c("clinics|213|42",
-                   "metabolomics_liver_c18hyper_pos|8938|42",
-                   "metabolomics_liver_hilic_neg|3630|42",
-                   "metabolomics_plasma_c18acqui_neg|1943|42",
-                   "metabolomics_plasma_c18acqui_pos|3276|42",
-                   "metabolomics_plasma_c18hyper_pos|9133|42",
-                   "metabolomics_plasma_hilic_neg|3402|42",
+                   "metabolomics_liver_c18hyper_pos|5195|42",
+                   "metabolomics_liver_hilic_neg|2062|42",
+                   "metabolomics_plasma_c18acqui_neg|1449|42",
+                   "metabolomics_plasma_c18acqui_pos|4804|42",
+                   "metabolomics_plasma_c18hyper_pos|5476|42",
+                   "metabolomics_plasma_hilic_neg|1844|42",
                    "proteomics_liver|2187|42",
                    "proteomics_plasma|446|36")
   test_dim.mn <- sapply(test_dim.vc, function(x) unlist(strsplit(x, "|", fixed = TRUE))[c(2, 3)])
