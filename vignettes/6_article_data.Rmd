@@ -21,8 +21,7 @@ output:
 ```{r options, include=FALSE}
 knitr::opts_chunk$set(fig.width = 8,
                       fig.height = 8,
-                      fig.path = 'figures/article/',
-                      echo = FALSE,
+                      fig.path = 'figures/article_data/',
                       message = FALSE,
                       warning = FALSE)
 ```
@@ -66,13 +65,13 @@ data_dims.mn <- data_dims.mn[c("clinics",
 
 rownames(data_dims.mn) <- c("clinics",
                             "liver_proteomics",
-                            "liver_metabo_c18hyper.pos",
-                            "liver_metabo_hilic.neg",
+                            "liver_metabo_c18hyper_pos",
+                            "liver_metabo_hilic_neg",
                             "plasma_proteomics",
-                            "plasma_metabo_c18hyper.pos",
-                            "plasma_metabo_hilic.neg",
-                            "plasma_metabo_c18acqui.pos",
-                            "plasma_metabo_c18acqui.neg")
+                            "plasma_metabo_c18hyper_pos",
+                            "plasma_metabo_hilic_neg",
+                            "plasma_metabo_c18acqui_pos",
+                            "plasma_metabo_c18acqui_neg")
 
 p <- phenomis::gg_barplot(data_dims.mn,
                           bar_just.n = 0,
@@ -86,20 +85,29 @@ p <- phenomis::gg_barplot(data_dims.mn,
 p <- p + ggplot2::scale_y_continuous(trans = "log10", limits = c(1, NA),
                                      expand = ggplot2::expansion(add = c(0, 1)))
 print(p)
+
+grDevices::png("figures/article_data/sets_dims.png",
+               width = 740)
+
+print(p)
+
+grDevices::dev.off()
 ```
 
 # Clinical features
 ```{r clinics}
 clinics.eset <- mset.ls[["LAT"]][["clinics"]]
 
-# for (figure.c in c("none",
-#                    "figures/article/clinics_pie.pdf")) {
-  phenomis::gg_pie(Biobase::fData(clinics.eset), y.c = "category",
-                   title.c = "Clinical variables",
-                   geom_text.ls = list(lab.i = 4, legend_text.i = 8, title.i = 18),
-                   label.c = "value")
-                   # , figure.c = figure.c)
-# }
+p <- phenomis::gg_pie(Biobase::fData(clinics.eset), y.c = "category",
+                 title.c = "Clinical variables",
+                 geom_text.ls = list(lab.i = 4, legend_text.i = 8, title.i = 18),
+                 label.c = "value")
+
+grDevices::png("figures/article_data/clinics_categories.png")
+
+print(p)
+
+grDevices::dev.off()
 ```
 
 # Technical validation
@@ -218,6 +226,7 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
 
 }
 ```
+
 ```{r metabo_qc_display}
 scoreplot.ls <- vector(mode = "list", length = length(ProMetIS::metabo_sets.vc()))
 names(scoreplot.ls) <- ProMetIS::metabo_sets.vc()
@@ -230,12 +239,19 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
   pdata.df[, "label"] <- ifelse(pdata.df[, "sampleType"] == "pool", "QC", "s")
   Biobase::pData(eset) <- pdata.df
   eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
-  scoreplot.ls[[set.c]] <- score_plotly(eset.pca,
-                                        label.c = "label",
-                                        color.c = "order",
-                                        title.c = gsub("metabolomics_", "", set.c),
-                                        figure.c = "interactive",
-                                        plot.l = FALSE)
+  scoreplot.ls[[set.c]] <- ProMetIS:::score_plotly(eset.pca,
+                                                   label.c = "label",
+                                                   color.c = "order",
+                                                   title.c = gsub("metabolomics_", "", set.c),
+                                                   figure.c = "interactive",
+                                                   size.ls = list(axis_lab.i = 12,
+                                                                  axis_text.i = 10,
+                                                                  point.i = 2,
+                                                                  label.i = 4,
+                                                                  title.i = 15,
+                                                                  legend_title.i = 10,
+                                                                  legend_text.i = 10),
+                                                   plot.l = FALSE)
   
 }
 
@@ -246,7 +262,7 @@ scoreplots.p <- gridExtra::grid.arrange(grobs = scoreplot.ls[c("metabolomics_liv
                                                                "metabolomics_plasma_c18acqui_pos",
                                                                "metabolomics_plasma_c18acqui_neg")],
                                         nrow = 2)
-ggplot2::ggsave("essai.pdf", scoreplots.p, width = 12)
+ggplot2::ggsave("figures/article_data/metabo_qc.png", scoreplots.p, width = 12)
 ```
 
 

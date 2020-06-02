@@ -36,6 +36,9 @@ mice_id.vc <- rownames(mice_id.df)
 mice_num.vc <- substr(mice_id.vc, 2, 4)
 stopifnot(identical(as.integer(mice_num.vc),
                     sort(as.integer(mice_num.vc))))
+mice.ls <- list(id.df = mice_id.df,
+                id.vc = mice_id.vc,
+                num.vc = mice_num.vc)
 ```
 
 # Clinics
@@ -508,7 +511,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 
 ## Re-ordering metadata ('supp_' columns at the end)
 
-```{r proteo_reordering}
+```{r proteo_reordering_supp}
 proteo.mset <- ProMetIS::order_mset(proteo.mset)
 ```
 
@@ -559,14 +562,14 @@ The workflow consists of the following steps:
 |NA <= 20% & var > 0 |         X         |         X         |         X         |         X         |         X         |         X         |
 |pool CV       <= 0.3|         X         |         X         |         X         |         X         |         X         |         X         |
 |poolCV/sampCV <= 1  |         X         |         X         |         X         |         X         |         X         |         X         |
-|pcgroup       > 0.9 |         X         |         X         |         X         |         X         |         X         |         X         |
+|corr, dRT, dmz      |         X         |         X         |         X         |         X         |         X         |         X         |
 
 ```{r metabolomics_dataMatrix, message=FALSE, warning=FALSE}
 for (set.c in ProMetIS::metabo_sets.vc()) {
 
   eset <- metabo.mset[[set.c]]
   
-  # Imputation
+  # Imputation (MTH Paris)
   
   if (grepl("c18hyper", set.c)) {
     
@@ -578,14 +581,16 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
     
   }
   
-  # RT filtering
+  # RT filtering (MTH Clermont)
   
-  if (grepl("c18acqui", set.c)) {
-    
-    eset <- eset[which(Biobase::fData(eset)[, "rt"] >= 0.4 &
-                         Biobase::fData(eset)[, "rt"] <= 22), ]
-    
-  }
+  ## Converting RT in seconds
+  rt.vn <- Biobase::fData(eset)[, "rt"]
+  if (max(rt.vn) < 60)
+    Biobase::fData(eset)[, "rt"] <- rt.vn * 60
+  
+  if (grepl("c18acqui", set.c))
+    eset <- eset[which(Biobase::fData(eset)[, "rt"] >= 0.4 * 60 &
+                         Biobase::fData(eset)[, "rt"] <= 22 * 60), ]
   
   # Blank filtering
   
@@ -593,37 +598,40 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
   
   eset <- eset[which(Biobase::fData(eset)[, "blankMean_over_sampleMean"] <= 0.33), ]
 
-  # Pool dilution
+  # Pool dilution (MTH Paris)
   
   if (grepl("(hyper|hilic)", set.c)) {
     
     eset <- eset[which(Biobase::fData(eset)[, "poolDil_cor"] >= 0.7), ]
-
-    
+  
+    ## Setting pool1 to pool for subsequent use in the 'pool CV < 30%' filter
+  
+    Biobase::pData(eset)[, "sampleType"] <- gsub("pool1", "pool",
+                                                 Biobase::pData(eset)[, "sampleType"])
+  
   }
 
-  # Discarding blanks
+  # Discarding blanks and pool dilutions
   
   eset <- eset[, which(Biobase::pData(eset)[, "sampleType"] %in% c("sample", "pool"))]
   
   # Signal drift correction
   
-  if (grepl("(hyper|hilic)", set.c)) {
-    
-    # setting last 'pool1' before 'sample' to 'pool'
-    pdata.df <- Biobase::pData(eset)
-    pdata_ord.df <- pdata.df[order(pdata.df[, "injectionOrder"]), ]
-    rowname.c <- rownames(pdata_ord.df)[which(pdata_ord.df[, "sampleType"] == "sample")[1] - 1]
-    pdata.df[rowname.c, "sampleType"] <- "pool"
-    Biobase::pData(eset) <- pdata.df
-    
-  } else {
-    
-    # setting the first injectionOrder to 1
-    Biobase::pData(eset)[, "injectionOrder"] <- Biobase::pData(eset)[, "injectionOrder"] - min(Biobase::pData(eset)[, "injectionOrder"]) + 1
-    
-  }
+  ## ordering eset according to injection order
+  
+  eset <- eset[, order(Biobase::pData(eset)[, "injectionOrder"])]
+  
+  ## keeping only the last 'pool' before the first 'sample' (to limit extrapolation)
+  
+  pdata.df <- Biobase::pData(eset)
+  first_sample.i <- which(pdata.df[, "sampleType"] == "sample")[1]
+  last_pool_before_first_sample.i <- first_sample.i - 1 
+  stopifnot(pdata.df[last_pool_before_first_sample.i, "sampleType"] == "pool")
+  
+  eset <- eset[, seq(last_pool_before_first_sample.i, dim(eset)["Samples"], by = 1)]
 
+  ## signal drift correction
+  
   eset <- phenomis::correcting(eset,
                                reference.c = "sample",
                                title.c = gsub("metabolomics_", "", set.c),
@@ -647,9 +655,11 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
   
   eset <- eset[, which(Biobase::pData(eset)[, "sampleType"] != "pool")]
   
-  # Correlated features within the same pcgroup
+  # Reducing chemical redundancy (Monnerie et al., 2019)
   
-  eset <- ProMetIS:::.filter_pcgroup(eset)
+  eset <- phenomis::reducing(eset)
+  
+  eset <- eset[Biobase::fData(eset)[, "redund_is"] < 1, ]
   
   # Updating the eset object
   
@@ -668,10 +678,8 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
 ## Formatting and ordering sample names
 
 ```{r metabo_format_names}
-metabo.mset <- ProMetIS:::.format_metabonames(metabo.mset,
-                                              mice_id.df = mice_id.df,
-                                              mice_id.vc = mice_id.vc,
-                                              mice_num.vc = mice_num.vc)
+metabo.mset <- ProMetIS:::.format_metabonames(metabo.mset = metabo.mset,
+                                              mice.ls = mice.ls)
 ```
 
 ## Log2 transformation

@@ -118,15 +118,15 @@
 
 
 
-.format_metabonames <- function(metabo.mset, mice_id.df, mice_id.vc, mice_num.vc) {
+.format_metabonames <- function(metabo.mset,
+                                mice.ls) {
+                                # mice_id.df, mice_id.vc, mice_num.vc) {
   
   for (set.c in ProMetIS::metabo_sets.vc()) {
     
     eset <- metabo.mset[[set.c]]
     
-    # sample names formatting and ordering
-    
-    pdata.df <- Biobase::pData(eset)
+    # sample names formatting and ordering by mouse number
     
     if (grepl("(hyper|hilic)", set.c)) {
       samp_num.vc <- substr(Biobase::sampleNames(eset), 11, 13)
@@ -135,21 +135,26 @@
     } else
       stop("Unknown metabolomics dataset name.")
     
-    stopifnot(identical(sort(samp_num.vc), sort(mice_num.vc)))
+    stopifnot(identical(sort(samp_num.vc), sort(mice.ls[["num.vc"]])))
     
     if (grepl("acqui", set.c)) {
       eset <- eset[, order(as.numeric(samp_num.vc))]
       samp_num.vc <- substr(Biobase::sampleNames(eset), 10, 12)
     }
     
-    stopifnot(identical(samp_num.vc, mice_num.vc))
+    stopifnot(identical(sort(samp_num.vc), sort(mice.ls[["num.vc"]])))
     
-    pdata.df <- cbind.data.frame(mice_id.df,
-                                 initial_name = Biobase::sampleNames(eset),
-                                 pdata.df)
+    samp_ord.vi <- order(samp_num.vc)
+    eset <- eset[, samp_ord.vi]
+    samp_num.vc <- samp_num.vc[samp_ord.vi]
     
-    Biobase::sampleNames(eset) <- mice_id.vc
-    Biobase::pData(eset) <- pdata.df
+    stopifnot(identical(samp_num.vc, mice.ls[["num.vc"]]))
+    
+    Biobase::pData(eset) <- cbind.data.frame(mice.ls[["id.df"]],
+                                             initial_name = Biobase::sampleNames(eset),
+                                             Biobase::pData(eset))
+    
+    Biobase::sampleNames(eset) <- mice.ls[["id.vc"]]
     
     # ordering features metadata (supplementary columns will be moved at the end
     # of the data frame with the ordermeta_mset function)

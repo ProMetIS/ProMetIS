@@ -348,7 +348,9 @@ order_mset <- function(mset) {
                          "rt",
                          "isotopes",
                          "adduct",
-                         "pcgroup")
+                         "pcgroup",
+                         "redund_group",
+                         "redund_iso_add_frag")
              
              if (grepl("(hyper|hilic)", set.c)) {
                
