@@ -267,3 +267,165 @@ score_plotly <- function(ropls.model,
   }
   
 }
+
+.metabo_qcmetrics <- function(metabo.mset) {
+  
+  metrics.vc <- c("cor_univ", "cor_pca", "qc_spread")
+  metrics.mn <- matrix(0, nrow = length(metabo.mset), ncol = length(metrics.vc),
+                       dimnames = list(names(metabo.mset), metrics.vc))
+  
+  # testing if 'injectionOrder' column is present with no NA
+  
+  injOrd_test.vl <- sapply(names(metabo.mset),
+                           function(set.c) {
+                             pdata.df <- Biobase::pData(metabo.mset[[set.c]])
+                             "injectionOrder" %in% colnames(pdata.df) &&
+                               !any(is.na(pdata.df[, "injectionOrder"]))
+                           })
+  if (any(!injOrd_test.vl))
+    stop("The 'injectionOrder' column from the sampleMetadata is either missing or contains missing values in the following dataset(s):\n",
+        paste(names(injOrd_test.vl)[!injOrd_test.vl], collapse = ",\n"), sep = "")
+  
+  # significant correlation with injection order
+  
+  metabo.mset <- phenomis::hypotesting(metabo.mset, "spearman", "injectionOrder",
+                                       figure.c = "none",
+                                       report.c = "none")
+  
+  for (set.c in names(metabo.mset)) {
+    
+    # set.c <- "metabolomics_plasma_c18acqui_pos"
+    # set.c <- "metabolomics_liver_hilic_neg"
+ 
+    eset <- metabo.mset[[set.c]]
+    
+    # eset <- eset[, order(Biobase::pData(eset)[, "injectionOrder"])]
+    
+    eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
+    
+    # significant correlation with injection order
+
+    metrics.mn[set.c, "cor_univ"] <- sum(Biobase::fData(eset)[, "spearman_injectionOrder_signif"],
+                                         na.rm = T) / dim(eset)["Features"]
+    
+    # correlation between scores and injection order
+    
+    scores.mn <- ropls::getScoreMN(eset.pca)
+    
+    metrics.mn[set.c, "cor_pca"] <- sqrt(tcrossprod(cor(Biobase::pData(eset)[, "injectionOrder"], scores.mn)))
+    
+    # QC spread
+    
+    scores_invcov.mn <- solve(stats::cov(scores.mn))
+    
+    scores_dist.vn <- apply(scores.mn,
+                            1,
+                            function(x)
+                              t(as.matrix(x)) %*% scores_invcov.mn %*% as.matrix(x))
+    
+    stopifnot(identical(names(scores_dist.vn), Biobase::sampleNames(eset)))
+    
+    metrics.mn[set.c, "qc_spread"] <- max(scores_dist.vn[Biobase::pData(eset)[, "sampleType"] == "pool"]) / max(scores_dist.vn)
+    
+  }
+  
+  # return
+
+  return(metrics.mn)
+  
+}
+
+.icc <- function(metabo.mset) {
+  
+  metrics.vc <- c("cor_univ", "cor_pca", "qc_spread")
+  metrics.mn <- matrix(0, nrow = length(metabo.mset), ncol = length(metrics.vc),
+                       dimnames = list(names(metabo.mset), metrics.vc))
+  
+  for (set.c in names(metabo.mset)) {
+    
+    # set.c <- "metabolomics_plasma_c18acqui_pos"
+    # set.c <- "metabolomics_liver_hilic_neg"
+    
+    eset <- metabo.mset[[set.c]]
+    
+    # Zhang, X., Dong, J., & Raftery, D. (2020). Five easy metrics of data quality for LC-MS based global metabolomics. Analytical Chemistry, 92(19), 12925–12933. https://doi.org/10.1021/acs.analchem.0c01493
+
+    qc.eset <- eset[, Biobase::pData(eset)[, "sampleType"] == "pool"]
+    
+    qc.mn <- Biobase::exprs(qc.eset)
+    
+    cv.vn <- apply(qc.mn, 1, function(row.vn) sd(row.vn) / mean(row.vn))
+    qc.mn <- qc.mn[order(cv.vn), ]
+    cv.vn <- sort(cv.vn)
+    
+    # quant.vn <- quantile(cv.vn, seq(0, 1, by = 0.05))
+    
+    segments.vn <- max(cv.vn) / 1:20
+ 
+    ind.vi <- numeric(length(cv.vn))
+    
+    for (k in 1:20) {
+      
+      # ind.vi[which(cv.vn <= segments.vn[k])] <- 20 - k + 1
+      
+      ind.vi <- ind.vi + as.numeric(cv.vn <= segments.vn[k]) 
+      
+    }
+    
+   
+    
+    aa <- as.numeric(cv.vn <= segments.vn[1]) 
+    
+    table(ind.vi)
+    
+    p <- 20
+    
+    while (p >= 1) {
+      
+      ind.vi[which(cv.vn <= max(cv.vn) / 20 * p)] <- p
+      
+      p <- p - 1
+      
+    }
+    
+    for (k in 1:20) {
+      
+      
+      
+    }
+    length(cv.vn) / 20
+    
+    seq(from = 1, to = length(cv.vn), length.out = 20)
+    eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
+    
+    # significant correlation with injection order
+    
+    metrics.mn[set.c, "cor_univ"] <- sum(Biobase::fData(eset)[, "spearman_injectionOrder_signif"],
+                                         na.rm = T) / dim(eset)["Features"]
+    
+    # correlation between scores and injection order
+    
+    scores.mn <- ropls::getScoreMN(eset.pca)
+    
+    metrics.mn[set.c, "cor_pca"] <- sqrt(tcrossprod(cor(Biobase::pData(eset)[, "injectionOrder"], scores.mn)))
+    
+    # QC spread
+    
+    scores_invcov.mn <- solve(stats::cov(scores.mn))
+    
+    scores_dist.vn <- apply(scores.mn,
+                            1,
+                            function(x)
+                              t(as.matrix(x)) %*% scores_invcov.mn %*% as.matrix(x))
+    
+    stopifnot(identical(names(scores_dist.vn), Biobase::sampleNames(eset)))
+    
+    metrics.mn[set.c, "qc_spread"] <- max(scores_dist.vn[Biobase::pData(eset)[, "sampleType"] == "pool"]) / max(scores_dist.vn)
+    
+  }
+  
+  # return
+  
+  return(metrics.mn)
+  
+}

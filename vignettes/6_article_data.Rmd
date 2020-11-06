@@ -94,16 +94,17 @@ print(p)
 grDevices::dev.off()
 ```
 
-# Clinical features
+# Preclinical features
+
 ```{r clinics}
 clinics.eset <- mset.ls[["LAT"]][["clinics"]]
 
 p <- phenomis::gg_pie(Biobase::fData(clinics.eset), y.c = "category",
-                 title.c = "Clinical variables",
+                 title.c = "Preclinical variables",
                  geom_text.ls = list(lab.i = 4, legend_text.i = 8, title.i = 18),
                  label.c = "value")
 
-grDevices::png("figures/article_data/clinics_categories.png")
+grDevices::png("figures/article_data/preclinical_categories.png")
 
 print(p)
 
@@ -227,6 +228,16 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
 }
 ```
 
+```{r}
+knitr::kable(signif(ProMetIS:::.metabo_qcmetrics(metabo.mset = metabo.mset), 2))
+```
+
+```{r}
+
+```
+
+
+
 ```{r metabo_qc_display}
 scoreplot.ls <- vector(mode = "list", length = length(ProMetIS::metabo_sets.vc()))
 names(scoreplot.ls) <- ProMetIS::metabo_sets.vc()
@@ -256,10 +267,10 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
 }
 
 scoreplots.p <- gridExtra::grid.arrange(grobs = scoreplot.ls[c("metabolomics_liver_c18hyper_pos",
-                                                               "metabolomics_liver_hilic_neg",
                                                                "metabolomics_plasma_c18hyper_pos",
-                                                               "metabolomics_plasma_hilic_neg",
                                                                "metabolomics_plasma_c18acqui_pos",
+                                                               "metabolomics_liver_hilic_neg",
+                                                               "metabolomics_plasma_hilic_neg",
                                                                "metabolomics_plasma_c18acqui_neg")],
                                         nrow = 2)
 ggplot2::ggsave("figures/article_data/metabo_qc.png", scoreplots.p, width = 12)
