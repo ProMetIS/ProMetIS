@@ -122,7 +122,8 @@ metabo.mset <- phenomis::reading(file.path(ProMetIS::processed_dir.c()),
                                  subsets.vc = ProMetIS::metabo_sets.vc(),
                                  report.c = "none")
 ```
-Post-processing the datasets (up to the log2 transformation) with either no signal drift correction, or a correction based on pools or on samples (the latter is the one used in the workflow; the other two are for comparison); pools are kept (for quality metrics computation and display):
+
+Post-processing the datasets with either no signal drift correction, or a correction based on pools or on samples (the latter is the one used in the workflow; the other two are for comparison); pools are kept (for quality metrics computation and display):
 
 ```{r metabosets_postprocessing}
 correct.vc <- c("none", "pool", "sample")
@@ -136,11 +137,11 @@ for (correct.c in correct.vc) {
                                                                   drift_correct.c = correct.c,
                                                                   .discard_pools.l = FALSE)
 }
-# save(metabo_mset.ls, file = "metabo_mset_ls.rdata")
-# load("../../ProMetISdev/vignettes/metabo_mset_ls.rdata")
 ```
 
-```{r}
+Log2 transformation:
+
+```{r metabosets_logtransform}
 metabo_mset.ls <- lapply(metabo_mset.ls,
                          function(mset) phenomis::transforming(mset,
                                                                report.c = "none"))
@@ -150,22 +151,12 @@ For each drift correction, the following quality metrics are computed for each d
 
 * compounds: total number of features
 
-* groups: number of groups of features putatively corresponding to the same metabolite (Monnerie et al., 2019; DOI:10.3390/metabo9110250)
-
-* NA_0.2: % of features with less than 20% of missing values
-
-* correl_inj_test: % of features significantly correlated with the injection order (Spearman correlation; Benjamini-Hochberg correction for multiple testing)
-
 * correl_inj_pca: % of correlation between the 3 first PCA components and the injection order
 
 * pool_spread_pca: % ratio between the maximum QC spread and the maximum sample spread in the 3 first PCA component space assessed by the Mahalanobis distance
 
-* poolCV_0.3: % of features with CV of pools <= 30%
-
-* ICCpool: intraclass correlation coefficient of pools at most probable abundance (Zhang et al., 2020; DOI:10.1021/acs.analchem.0c01493) 
-
-```{r metabo_quality_metrics}
-quality.mn <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[["none"]])[["quality.mn"]]
+```{r metabosets_quality_metrics}
+quality.mn <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[["none"]])
 
 quality.an <- array(0, dim = c(dim(quality.mn), length(correct.vc)),
                     dimnames = c(dimnames(quality.mn), list(correct.vc)))
@@ -173,48 +164,21 @@ quality.an <- array(0, dim = c(dim(quality.mn), length(correct.vc)),
 quality.an[, , "none"] <- quality.mn
 
 for (correct.c in correct.vc[-1])
-  quality.an[, , correct.c] <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[[correct.c]])[["quality.mn"]]
+  quality.an[, , correct.c] <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[[correct.c]])
 ```
 
-```{r}
-for (metric.c in c("correl_inj_pca", "pool_spread_pca")) {
-  quality.mn <- signif(quality.an[, metric.c, ], 2)
-  # rownames(quality.mn) <- gsub("metabolomics_", "", rownames(quality.mn))
-  p <- phenomis::gg_barplot(quality.mn,
-                            cex_bar.i = 4,
-                            bar_just.n = 0,
-                            title.c = metric.c,
-                            figure.c = "none")
-  
-  p <- p + ggplot2::scale_y_continuous(expand = ggplot2::expansion(add = c(0, ifelse(grepl("correl", metric.c), 5, 1))))
-  print(p)
+```{r metabosets_quality_metrics_print}
+for(correct.c in correct.vc) {
+  print(correct.c)
+  print(signif(apply(quality.an[, c("correl_inj_pca", "pool_spread_pca"), correct.c],
+                     2,
+                     function(x) c(mean = mean(x), sd = sd(x))), 2))
 }
 ```
 
+For each drift correction, PCA score plot of each dataset:
 
-```{r}
-signif(quality.an[, , "sample"], 2)
-sapply(correct.vc,
-       function(correct.c) {
-         apply(quality.an[, c("correl_inj_pca", "pool_spread_pca"), correct.c],
-               2,
-               function(x) c(mean = mean(x), sd = sd(x), median = median(x), min = min(x), max = max(x)))
-       })
-for(correct.c in correct.vc)
-   print(signif(apply(quality.an[, c("correl_inj_pca", "pool_spread_pca"), correct.c],
-               2,
-               function(x) c(mean = mean(x), sd = sd(x))), 2))
-knitr::kable(signif(quality.an[, , "sample"], 2))
-```
-
-choisir les colonnes pca_corr_inj et pca_pool_spread
-faire apparaitre les valeurs sur les scoreplots
-montrer que c'est un compromis par rapport aux methodes none et pool (mean/median, min, max)
-calculer les CV sur les pools, les samples (pour WT/LAT/MX2); idem en proteomique et en preclinique
-
-For each drift correction, PCA score plot of each dataset
-
-```{r metabo_quality_scoreplots}
+```{r metabosets_quality_scoreplots}
 for (correct.c in correct.vc) {
   metabo.mset <- metabo_mset.ls[[correct.c]]
   scoreplot.ls <- vector(mode = "list", length = length(ProMetIS::metabo_sets.vc()))
@@ -259,11 +223,6 @@ for (correct.c in correct.vc) {
 
 ```
 
-```{r}
-stat.mset <- phenomis::reading(ProMetIS::post_processed_dir.c())
-stat.mset <- stat.mset[, ProMetIS::metabo_sets.vc()]
-phenomis::inspecting(stat.mset)
-```
 
 
 

@@ -125,7 +125,7 @@ metabo_postprocessing <- function(metabo.mset,
     
     if (grepl("acqui", set.c)) { ## resetting injection order min to 1 (MTH Clermont)
       pdata.df <- Biobase::pData(eset)
-      pdata.df[, "order"] <- pdata.df[, "order"] - min(pdata.df[, "order"]) + 1
+      pdata.df[, "injectionOrder"] <- pdata.df[, "injectionOrder"] - min(pdata.df[, "injectionOrder"]) + 1
       Biobase::pData(eset) <- pdata.df
     }
     
