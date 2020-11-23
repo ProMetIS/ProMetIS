@@ -3,7 +3,6 @@
 .RData
 .Ruserdata
 archive/
-vignettes/*.html
-vignettes/figures/temp/
-vignettes/figures/aggregated/
+vignettes/figures/article_data/
+vignettes/figures/tutorial/
 

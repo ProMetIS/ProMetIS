@@ -52,75 +52,148 @@
 
 ## Metabolomics ----
 
-.filter_pcgroup <- function(input.eset,
-                            cor_method.c = "pearson",
-                            cor_threshold.n = 0.9) {
+# Postprocessing of metabolomics datasets
+#  Imputation
+#  RT filtering
+#  Blank filtering
+#  Pool dilution correlation
+#  Signal drift correction
+#  poolCV <= 0.3
+#  poolCV_over_sampleCV <= 1
+#  Chemical redundancy (Monnerie et al., 1999)
+metabo_postprocessing <- function(metabo.mset,
+                                  drift_correct.c = c("none", "pool", "sample"),
+                                  .discard_pools.l = TRUE) {
   
-  # Authors: Antoine Gravot antoine.gravot@univ-rennes1.fr (Protocole conception)
-  # and Misharl Monsoor misharl.monsoor@sb-roscoff.fr (for galaxy wrapper and R script).
-  # https://github.com/workflow4metabolomics/correlation_analysis/blob/master/correlation_analysis.r
-  # Adapted to ExpressionSet objects by Etienne Thevenot [2020-02-22]
-  
-  stopifnot("pcgroup" %in% Biobase::fvarLabels(input.eset))
-  
-  eset <- input.eset[stats::complete.cases(Biobase::fData(input.eset)[, "pcgroup"]), ]
-  
-  exprs.mn <- Biobase::exprs(eset)
-  fdata.df <- Biobase::fData(eset)
-  
-  fdata.df[, "mean_intensity"] <- rowMeans(exprs.mn, na.rm = TRUE)
-  
-  order.vi <- order(fdata.df[, "pcgroup"], -fdata.df[, "mean_intensity"])
-  
-  exprs.mn <- exprs.mn[order.vi, ]
-  fdata.df <- fdata.df[order.vi, ]
-  
-  exprs_cor.mn <- cor(t(exprs.mn), method = cor_method.c)
-  
-  pcgroups.vi <- unique(fdata.df[, "pcgroup"])
-  
-  redundancy.vl <- logical()
-  
-  for (pcgroup.i in pcgroups.vi) {
+  for (set.c in names(metabo.mset)) {
     
-    pcgroup.vl <- fdata.df[, "pcgroup"] == pcgroup.i
+    eset <- metabo.mset[[set.c]]
     
-    if (sum(pcgroup.vl) == 1) {
+    # Imputation (MTH Paris)
+    
+    if (grepl("c18hyper", set.c)) {
       
-      redundancy.vl <- c(redundancy.vl, FALSE)
+      exprs.mn <- Biobase::exprs(eset)
       
-    } else {
+      exprs.mn[is.na(exprs.mn)] <- 1
       
-      group_cor.mn <- exprs_cor.mn[pcgroup.vl, pcgroup.vl, drop = FALSE]
-      group_cor.mn[!lower.tri(group_cor.mn)] <- NA_real_
-      group_cor.vl <- apply(group_cor.mn, 1,
-                            function(row.vn) {
-                              row.vn <- row.vn[!is.na(row.vn)]
-                              if (length(row.vn)) {
-                                return(any(row.vn > cor_threshold.n))
-                              } else {
-                                return(FALSE)
-                              }
-                            })
-      
-      redundancy.vl <- c(redundancy.vl, group_cor.vl)
+      Biobase::exprs(eset) <- exprs.mn
       
     }
     
+    # RT filtering (MTH Clermont)
+    
+    ## Converting RT in seconds
+    rt.vn <- Biobase::fData(eset)[, "rt"]
+    if (max(rt.vn) < 60)
+      Biobase::fData(eset)[, "rt"] <- rt.vn * 60
+    
+    if (grepl("c18acqui", set.c))
+      eset <- eset[which(Biobase::fData(eset)[, "rt"] >= 0.4 * 60 &
+                           Biobase::fData(eset)[, "rt"] <= 22 * 60), ]
+    
+    # Blank filtering
+    
+    eset <- phenomis::inspecting(eset,
+                                 figure.c = !.discard_pools.l,
+                                 report.c = "none")
+    
+    eset <- eset[which(Biobase::fData(eset)[, "blankMean_over_sampleMean"] <= 0.33), ]
+    
+    # Pool dilution (MTH Paris)
+    
+    if (grepl("(hyper|hilic)", set.c)) {
+      
+      eset <- eset[which(Biobase::fData(eset)[, "poolDil_cor"] >= 0.7), ]
+      
+      ## Setting pool1 to pool for subsequent use in the 'pool CV < 30%' filter
+      
+      Biobase::pData(eset)[, "sampleType"] <- gsub("pool1", "pool",
+                                                   Biobase::pData(eset)[, "sampleType"])
+      
+    }
+    
+    # Discarding blanks and pool dilutions
+    
+    eset <- eset[, which(Biobase::pData(eset)[, "sampleType"] %in% c("sample", "pool"))]
+    
+    # Signal drift correction
+    
+    ## ordering eset according to injection order
+    
+    eset <- eset[, order(Biobase::pData(eset)[, "injectionOrder"])]
+    
+    if (grepl("acqui", set.c)) { ## resetting injection order min to 1 (MTH Clermont)
+      pdata.df <- Biobase::pData(eset)
+      pdata.df[, "order"] <- pdata.df[, "order"] - min(pdata.df[, "order"]) + 1
+      Biobase::pData(eset) <- pdata.df
+    }
+    
+    ## keeping only the last 'pool' before the first 'sample' (to limit extrapolation)
+    
+    pdata.df <- Biobase::pData(eset)
+    first_sample.i <- which(pdata.df[, "sampleType"] == "sample")[1]
+    last_pool_before_first_sample.i <- first_sample.i - 1 
+    stopifnot(pdata.df[last_pool_before_first_sample.i, "sampleType"] == "pool")
+    
+    eset <- eset[, seq(last_pool_before_first_sample.i, dim(eset)["Samples"], by = 1)]
+    
+    ## signal drift correction
+    
+    if (drift_correct.c != "none")
+      eset <- phenomis::correcting(eset,
+                                   reference.c = drift_correct.c,
+                                   title.c = gsub("metabolomics_", "", set.c),
+                                   span.n = 2,
+                                   figure.c = !.discard_pools.l)
+    
+    # NAs and variances
+    
+    eset <- phenomis::filtering(eset, max_na_prop.n = 0)
+    
+    # pool CV <= 0.3
+    
+    eset <- phenomis::inspecting(eset, report.c = "none",
+                                 figure.c = !.discard_pools.l)
+    
+    eset <- eset[which(Biobase::fData(eset)[, "pool_CV"] <= 0.3), ]
+    
+    # poolCV_over_sampleCV <= 1
+    
+    eset <- eset[which(Biobase::fData(eset)[, "poolCV_over_sampleCV"] <= 1), ]
+    
+    # Discarding pools
+    
+    if (.discard_pools.l)
+      eset <- eset[, which(Biobase::pData(eset)[, "sampleType"] != "pool")]
+    
+    # Reducing chemical redundancy (Monnerie et al., 2019)
+    
+    eset <- phenomis::reducing(eset)
+    
+    eset <- eset[Biobase::fData(eset)[, "redund_is"] < 1, ]
+    
+    # Updating the eset object
+    
+    stopifnot(methods::validObject(eset))
+    
+    metabo.mset <- MultiDataSet::add_eset(metabo.mset,
+                                          eset,
+                                          dataset.type = set.c,
+                                          GRanges = NA,
+                                          overwrite = TRUE,
+                                          warnings = FALSE)
+    
   }
   
-  # exprs.mn <- exprs.mn[!redundancy.vl, ]
-  fdata.df <- fdata.df[!redundancy.vl, ]
-  
-  input.eset[rownames(fdata.df), ]
+  return(metabo.mset)
   
 }
 
 
-
 .format_metabonames <- function(metabo.mset,
                                 mice.ls) {
-                                # mice_id.df, mice_id.vc, mice_num.vc) {
+  # mice_id.df, mice_id.vc, mice_num.vc) {
   
   for (set.c in ProMetIS::metabo_sets.vc()) {
     

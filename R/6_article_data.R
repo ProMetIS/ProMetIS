@@ -335,81 +335,102 @@ score_plotly <- function(ropls.model,
   
 }
 
-.icc <- function(metabo.mset) {
+quality <- function(metabo.mset, figure.c = c("none", "interactive")[2]) {
   
-  metrics.vc <- c("cor_univ", "cor_pca", "qc_spread")
-  metrics.mn <- matrix(0, nrow = length(metabo.mset), ncol = length(metrics.vc),
-                       dimnames = list(names(metabo.mset), metrics.vc))
+  .hist <- function(metric.vn, bin.vn) {
+    
+    stopifnot(identical(metric.vn, sort(metric.vn)))
+    
+    ind.vi <- numeric(length(metric.vn))
+    
+    for (k in 1:(length(bin.vn) - 1))
+      ind.vi <- ind.vi + as.numeric(bin.vn[k] <= metric.vn)
+    
+    names(ind.vi) <- names(metric.vn)
+    
+    return(ind.vi)
+    
+  }
+  
+  # Zhang, X., Dong, J., & Raftery, D. (2020).
+  # Five easy metrics of data quality for LC-MS based global metabolomics.
+  # Analytical Chemistry, 92(19), 12925–12933. https://doi.org/10.1021/acs.analchem.0c01493
+  
+  quality.vc <- c("compounds",
+                  "groups",
+                  "NA_0.2",
+                  "correl_inj_test",
+                  "correl_inj_pca",
+                  "pool_spread_pca",
+                  "poolCV_0.3",
+                  "ICCpool")
+  quality.mn <- matrix(0,
+                       nrow = length(metabo.mset),
+                       ncol = length(quality.vc),
+                       dimnames = list(names(metabo.mset),
+                                       quality.vc))
+  
+  cv_bin.i <- 20
+  cv_bin.vn <- seq(0, 1, length.out = cv_bin.i + 1)
+  
+  cpd.mn <- matrix(0,
+                   nrow = cv_bin.i,
+                   ncol = length(metabo.mset),
+                   dimnames = list(1:cv_bin.i, names(metabo.mset)))
+  
+  int_bin.i <- 20
+  
+  cpd.ls <- vector(mode = "list", length = length(metabo.mset))
+  names(cpd.ls) <- names(metabo.mset)
+  cpd_temp.mn <- matrix(0,
+                        nrow = cv_bin.i,
+                        ncol = int_bin.i,
+                        dimnames = list(cv_bin.vn[-1], 1:int_bin.i))
+  
+  icc.ls <- vector(mode = "list", length = length(metabo.mset))
+  names(icc.ls) <- names(metabo.mset)
   
   for (set.c in names(metabo.mset)) {
-    
-    # set.c <- "metabolomics_plasma_c18acqui_pos"
     # set.c <- "metabolomics_liver_hilic_neg"
     
     eset <- metabo.mset[[set.c]]
     
-    # Zhang, X., Dong, J., & Raftery, D. (2020). Five easy metrics of data quality for LC-MS based global metabolomics. Analytical Chemistry, 92(19), 12925–12933. https://doi.org/10.1021/acs.analchem.0c01493
-
-    qc.eset <- eset[, Biobase::pData(eset)[, "sampleType"] == "pool"]
+    ## compounds
     
-    qc.mn <- Biobase::exprs(qc.eset)
+    quality.mn[set.c, "compounds"] <- dim(eset)["Features"]
     
-    cv.vn <- apply(qc.mn, 1, function(row.vn) sd(row.vn) / mean(row.vn))
-    qc.mn <- qc.mn[order(cv.vn), ]
-    cv.vn <- sort(cv.vn)
+    ## groups
     
-    # quant.vn <- quantile(cv.vn, seq(0, 1, by = 0.05))
+    eset <- phenomis::reducing(eset)
     
-    segments.vn <- max(cv.vn) / 1:20
- 
-    ind.vi <- numeric(length(cv.vn))
+    quality.mn[set.c, "groups"] <- length(table(Biobase::fData(eset)[, "redund_group"]))
     
-    for (k in 1:20) {
-      
-      # ind.vi[which(cv.vn <= segments.vn[k])] <- 20 - k + 1
-      
-      ind.vi <- ind.vi + as.numeric(cv.vn <= segments.vn[k]) 
-      
-    }
+    ## with <= 20% NA (%)
     
-   
+    isna.vn <- apply(Biobase::exprs(eset), 1, function(feat.vn) sum(is.na(feat.vn)))
     
-    aa <- as.numeric(cv.vn <= segments.vn[1]) 
+    quality.mn[set.c, "NA_0.2"] <- sum(isna.vn / dim(eset)["Samples"] <= 0.2) / dim(eset)["Features"] * 100
     
-    table(ind.vi)
+    ## correlation with injection order (%)
     
-    p <- 20
+    eset <- phenomis::hypotesting(eset, "spearman", "injectionOrder",
+                                  figure.c = "none",
+                                  report.c = "none")
     
-    while (p >= 1) {
-      
-      ind.vi[which(cv.vn <= max(cv.vn) / 20 * p)] <- p
-      
-      p <- p - 1
-      
-    }
+    quality.mn[set.c, "correl_inj_test"] <- sum(Biobase::fData(eset)[, "spearman_injectionOrder_signif"], na.rm = TRUE) / dim(eset)["Features"] * 100
     
-    for (k in 1:20) {
-      
-      
-      
-    }
-    length(cv.vn) / 20
+    ## correlation of the 3 first PCA components with the injection order (%)
     
-    seq(from = 1, to = length(cv.vn), length.out = 20)
-    eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
-    
-    # significant correlation with injection order
-    
-    metrics.mn[set.c, "cor_univ"] <- sum(Biobase::fData(eset)[, "spearman_injectionOrder_signif"],
-                                         na.rm = T) / dim(eset)["Features"]
-    
-    # correlation between scores and injection order
+    eset.pca <- ropls::opls(eset, predI = 3, fig.pdfC = "none", info.txtC = "none")
     
     scores.mn <- ropls::getScoreMN(eset.pca)
     
-    metrics.mn[set.c, "cor_pca"] <- sqrt(tcrossprod(cor(Biobase::pData(eset)[, "injectionOrder"], scores.mn)))
+    inj_cor.vn <- drop(cor(Biobase::pData(eset)[, "injectionOrder"], scores.mn))
     
-    # QC spread
+    quality.mn[set.c, "correl_inj_pca"] <- sqrt(sum(inj_cor.vn^2)) * 100
+    
+    ## ratio between the maximum QC spread and the maximum sample spread in the 3 first PCA component space
+    ## assessed by the Mahalanobis distance (%)
     
     scores_invcov.mn <- solve(stats::cov(scores.mn))
     
@@ -418,14 +439,179 @@ score_plotly <- function(ropls.model,
                             function(x)
                               t(as.matrix(x)) %*% scores_invcov.mn %*% as.matrix(x))
     
-    stopifnot(identical(names(scores_dist.vn), Biobase::sampleNames(eset)))
+    quality.mn[set.c, "pool_spread_pca"] <- max(scores_dist.vn[Biobase::pData(eset)[, "sampleType"] == "pool"]) / max(scores_dist.vn) * 100
     
-    metrics.mn[set.c, "qc_spread"] <- max(scores_dist.vn[Biobase::pData(eset)[, "sampleType"] == "pool"]) / max(scores_dist.vn)
+    ## CV <= 30% (%)
+    
+    qc.eset <- eset[, Biobase::pData(eset)[, "sampleType"] == "pool"]
+    
+    qc.mn <- Biobase::exprs(qc.eset)
+    
+    cv.vn <- apply(qc.mn, 1, function(row.vn) sd(row.vn) / mean(row.vn))
+    
+    quality.mn[set.c, "poolCV_0.3"] <- signif(sum(cv.vn <= 0.3) / length(cv.vn) * 100, 2)
+    
+    # ## 
+    # 
+    # cv.vn <- cv.vn[order(cv.vn)]
+    # 
+    # cv_ind.vi <- .hist(cv.vn, cv_bin.vn)
+    # 
+    # cpd.mn[names(table(cv_ind.vi)), set.c] <- table(cv_ind.vi)
+    # 
+    # cpd.mn[, set.c] <- cumsum(cpd.mn[, set.c]) / length(cv_ind.vi) * 100
+    # 
+    # 
+    # qcl.mn <- qc.mn
+    # qcl.mn[qcl.mn < .Machine$double.eps] <- NA
+    # qcl.mn <- log10(qcl.mn)
+    # 
+    # int.vn <- apply(qcl.mn, 1, function(feat.vn) median(feat.vn, na.rm = TRUE))
+    # int.vn <- int.vn[order(int.vn)]
+    # 
+    # int_bin.vn <- seq(min(int.vn), max(int.vn), length.out = int_bin.i + 1)
+    # 
+    # cpd_set.mn <- cpd_temp.mn
+    # 
+    # int_ind.vi <- .hist(int.vn, int_bin.vn)
+    # 
+    # colnames(cpd_set.mn) <- int_bin.vn[-1]
+    # # colnames(cpd_set.mn) <- as.numeric(colnames(cpd_set.mn)) - as.numeric(colnames(cpd_set.mn)[which(table(int_ind.vi) == max(table(int_ind.vi)))])
+    # 
+    # for (i in 1:nrow(cpd_set.mn)) {
+    #   for (j in 1:ncol(cpd_set.mn)) {
+    #     cpd_set.mn[i, j] <- length(intersect(names(cv_ind.vi)[cv_ind.vi == i],
+    #                                          names(int_ind.vi)[int_ind.vi == j]))
+    #   }
+    # }
+    # 
+    # cpd_set.mn <- cpd_set.mn / sum(cpd_set.mn) * 100
+    # cpd_set.mn <- t(cpd_set.mn)
+    # cpd_set.mn <- cpd_set.mn[, ncol(cpd_set.mn):1]
+    # cpd_set.mn <- cpd_set.mn[nrow(cpd_set.mn):1, ]
+    # 
+    # cpd.ls[[set.c]] <- cpd_set.mn
+    # 
+    # 
+    # ## ICC at most probable abundance
+    # 
+    # int.vn <- apply(qcl.mn, 1, function(feat.vn) median(feat.vn, na.rm = TRUE))
+    # qcl.mn <- qcl.mn[order(int.vn), ]
+    # int.vn <- int.vn[order(int.vn)]
+    # 
+    # int_bin.vn <- seq(min(int.vn), max(int.vn), length.out = int_bin.i + 1)
+    # 
+    # int_ind.vi <- .hist(int.vn, int_bin.vn)
+    # 
+    # icc_set.vn <- sapply(seq_len(int_bin.i), function(k) {
+    #   irr::icc(qcl.mn[int_ind.vi <= k, , drop = FALSE])[["value"]]
+    # })
+    # names(icc_set.vn) <- signif(int_bin.vn[-1], 2)
+    # # signif(caTools::runmean(int_bin.vn, 2)[-1], 2)
+    # 
+    # int_bin.tab <- table(int_ind.vi)
+    # names(icc_set.vn) <- as.numeric(names(icc_set.vn)) - as.numeric(names(icc_set.vn))[which(int_bin.tab == max(int_bin.tab))[1]]
+    # 
+    # icc.ls[[set.c]] <- icc_set.vn
     
   }
+  rownames(cpd.mn) <- cv_bin.vn[-1]
   
-  # return
   
-  return(metrics.mn)
+  # quality.mn[, "ICCpool"] <- sapply(icc.ls,
+  #                                   function(icc_set.vn)
+  #                                     as.numeric(icc_set.vn[which.min(abs(as.numeric(names(icc_set.vn))))]),
+  #                                   USE.NAMES = FALSE) * 100
+  
+  rownames(quality.mn) <- gsub("metabolomics_", "", rownames(quality.mn))
+  
+  # # Figures
+  # 
+  # if (figure.c != "none") {
+  #   
+  #   # Fig. 4a
+  #   
+  #   pal.vc <- RColorBrewer::brewer.pal(9, "Set1")[c(1:5, 7)]
+  #   
+  #   plot(c(0, 1), c(0, 100), type = "n",
+  #        xlab = "Coefficient of variation (CV)",
+  #        ylab = "Percentage of compounds (%)",
+  #        las = 1,
+  #        xaxs = "i",
+  #        yaxs = "i")
+  #   
+  #   for (set.c in names(metabo.mset)) {
+  #     
+  #     lines(cv_bin.vn, c(0, cpd.mn[, set.c]),
+  #           col = pal.vc[which(names(metabo.mset) == set.c)],
+  #           lwd = 2)
+  #     
+  #     points(cv_bin.vn, c(0, cpd.mn[, set.c]),
+  #            col = pal.vc[which(names(metabo.mset) == set.c)],
+  #            pch = 16)
+  #     
+  #   }
+  #   
+  #   abline(v = 0.3, col = "red", lty = "dashed")
+  #   
+  #   legend("bottomright", legend = paste0(gsub("metabolomics_", "", names(metabo.mset)),
+  #                                         " (", signif(cpd.mn[which(abs(cv_bin.vn[-1] - 0.3) < 0.04), ], 2),
+  #                                         "%)"),
+  #          bty = "n", text.col = pal.vc, text.font = 2)
+  #   
+  #   # Fig. 4b
+  #   
+  #   for (set.c in names(metabo.mset)) {
+  #     cpd_set.mn <- cpd.ls[[set.c]]
+  #     
+  #     # int_prop_max.n <- as.numeric(rownames(which(cpd_set.mn == max(cpd_set.mn, na.rm = TRUE), arr.ind = TRUE))[1])
+  #     # rownames(cpd_set.mn) <- as.numeric(rownames(cpd_set.mn)) - int_prop_max.n
+  #     
+  #     cpd_set.mn[cpd_set.mn == 0] <- NA
+  #     
+  #     ropls::view(cpd_set.mn, mainC = gsub("metabolomics_", "", set.c),
+  #                 rowLabC = "Log10(Intensity)",
+  #                 rowAllL = TRUE,
+  #                 rowMarN = 3.1,
+  #                 colLabC = "Coefficient of variation",
+  #                 colAllL = TRUE)
+  #   }
+  #   
+  #   # Fig. 5a
+  #   
+  #   pal.vc <- RColorBrewer::brewer.pal(9, "Set1")[c(1:5, 7)]
+  #   
+  #   plot(range(as.numeric(c(sapply(icc.ls, names)))), c(0, 1), type = "n",
+  #        xlab = "Log10(Intensity)",
+  #        ylab = "ICC",
+  #        las = 1,
+  #        xaxs = "i",
+  #        yaxs = "i")
+  #   
+  #   for (set.c in names(metabo.mset)) {
+  #     
+  #     lines(as.numeric(names(icc.ls[[set.c]])),
+  #           icc.ls[[set.c]],
+  #           col = pal.vc[which(names(metabo.mset) == set.c)],
+  #           lwd = 2)
+  #     
+  #     points(as.numeric(names(icc.ls[[set.c]])),
+  #            icc.ls[[set.c]],
+  #            col = pal.vc[which(names(metabo.mset) == set.c)],
+  #            pch = 16)
+  #     
+  #   }
+  #   
+  #   abline(v = 0, col = "red", lty = "dashed")
+  #   
+  #   legend("bottomright", paste0(gsub("metabolomics_", "", names(metabo.mset)),
+  #                                " (", round(quality.mn[, "ICCpool"]), "%)"),
+  #          bty = "n", text.col = pal.vc, text.font = 2)
+  #   
+  # }
+  # 
+  return(list(quality.mn = quality.mn,
+              cpd.mn = cpd.mn,
+              icc.ls = icc.ls))
   
 }

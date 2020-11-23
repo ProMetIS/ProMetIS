@@ -7,7 +7,7 @@ vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-  # bibliography: "ProMetIA.bib"
+bibliography: "ProMetIS.bib"
 output:
   BiocStyle::html_document:
     toc: yes
@@ -96,7 +96,7 @@ grDevices::dev.off()
 
 # Preclinical features
 
-```{r clinics}
+```{r preclinical}
 clinics.eset <- mset.ls[["LAT"]][["clinics"]]
 
 p <- phenomis::gg_pie(Biobase::fData(clinics.eset), y.c = "category",
@@ -115,165 +115,156 @@ grDevices::dev.off()
 
 ## Metabolomics
 
-### Evaluation of the signal drift correction
+Loading the processed datasets:
 
-On the plots below are displayed, for each dataset:
-
-* The 'pool' and 'sample' trends before and after the signal drift correction (based on the 'sample' reference)
-
-* The PCA obtained before removing the pools (i.e. after all the post-processing steps except the removal of the chemical redundancy and the log2 transform)
-
-It can be seen that, with the signal drift correction based on 'sample' and the poolQC <= 30% filter, the injection order trend is removed and the QCs are closed to the center of the score plot.
-
-```{r metabo_qc_compute, message=FALSE, warning=FALSE}
+```{r metabosets_loading}
 metabo.mset <- phenomis::reading(file.path(ProMetIS::processed_dir.c()),
                                  subsets.vc = ProMetIS::metabo_sets.vc(),
                                  report.c = "none")
+```
+Post-processing the datasets (up to the log2 transformation) with either no signal drift correction, or a correction based on pools or on samples (the latter is the one used in the workflow; the other two are for comparison); pools are kept (for quality metrics computation and display):
 
-for (set.c in ProMetIS::metabo_sets.vc()) {
+```{r metabosets_postprocessing}
+correct.vc <- c("none", "pool", "sample")
 
-  eset <- metabo.mset[[set.c]]
-  
-  # Imputation
-  
-  if (grepl("c18hyper", set.c)) {
-    
-    exprs.mn <- Biobase::exprs(eset)
-    
-    exprs.mn[is.na(exprs.mn)] <- 1
-    
-    Biobase::exprs(eset) <- exprs.mn
-    
-  }
-  
-  # RT filtering
-  
-  if (grepl("c18acqui", set.c)) {
-    
-    eset <- eset[which(Biobase::fData(eset)[, "rt"] >= 0.4 &
-                         Biobase::fData(eset)[, "rt"] <= 22), ]
-    
-  }
-  
-  # Blank filtering
-  
-  eset <- phenomis::inspecting(eset, figure.c = "none", report.c = "none")
-  
-  eset <- eset[which(Biobase::fData(eset)[, "blankMean_over_sampleMean"] <= 0.33), ]
+metabo_mset.ls <- vector(mode = "list", length = length(correct.vc))
+names(metabo_mset.ls) <- correct.vc
 
-  # Pool dilution
-  
-  if (grepl("(hyper|hilic)", set.c)) {
-    
-    eset <- eset[which(Biobase::fData(eset)[, "poolDil_cor"] >= 0.7), ]
+for (correct.c in correct.vc) {
+  print(correct.c)
+  metabo_mset.ls[[correct.c]] <- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
+                                                                  drift_correct.c = correct.c,
+                                                                  .discard_pools.l = FALSE)
+}
+# save(metabo_mset.ls, file = "metabo_mset_ls.rdata")
+# load("../../ProMetISdev/vignettes/metabo_mset_ls.rdata")
+```
 
-    
-  }
+```{r}
+metabo_mset.ls <- lapply(metabo_mset.ls,
+                         function(mset) phenomis::transforming(mset,
+                                                               report.c = "none"))
+```
 
-  # Discarding blanks
-  
-  eset <- eset[, which(Biobase::pData(eset)[, "sampleType"] %in% c("sample", "pool"))]
-  
-  # Signal drift correction
+For each drift correction, the following quality metrics are computed for each dataset:
 
-  if (grepl("(hyper|hilic)", set.c)) {
+* compounds: total number of features
+
+* groups: number of groups of features putatively corresponding to the same metabolite (Monnerie et al., 2019; DOI:10.3390/metabo9110250)
+
+* NA_0.2: % of features with less than 20% of missing values
+
+* correl_inj_test: % of features significantly correlated with the injection order (Spearman correlation; Benjamini-Hochberg correction for multiple testing)
+
+* correl_inj_pca: % of correlation between the 3 first PCA components and the injection order
+
+* pool_spread_pca: % ratio between the maximum QC spread and the maximum sample spread in the 3 first PCA component space assessed by the Mahalanobis distance
+
+* poolCV_0.3: % of features with CV of pools <= 30%
+
+* ICCpool: intraclass correlation coefficient of pools at most probable abundance (Zhang et al., 2020; DOI:10.1021/acs.analchem.0c01493) 
+
+```{r metabo_quality_metrics}
+quality.mn <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[["none"]])[["quality.mn"]]
+
+quality.an <- array(0, dim = c(dim(quality.mn), length(correct.vc)),
+                    dimnames = c(dimnames(quality.mn), list(correct.vc)))
+
+quality.an[, , "none"] <- quality.mn
+
+for (correct.c in correct.vc[-1])
+  quality.an[, , correct.c] <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[[correct.c]])[["quality.mn"]]
+```
+
+```{r}
+for (metric.c in c("correl_inj_pca", "pool_spread_pca")) {
+  quality.mn <- signif(quality.an[, metric.c, ], 2)
+  # rownames(quality.mn) <- gsub("metabolomics_", "", rownames(quality.mn))
+  p <- phenomis::gg_barplot(quality.mn,
+                            cex_bar.i = 4,
+                            bar_just.n = 0,
+                            title.c = metric.c,
+                            figure.c = "none")
+  
+  p <- p + ggplot2::scale_y_continuous(expand = ggplot2::expansion(add = c(0, ifelse(grepl("correl", metric.c), 5, 1))))
+  print(p)
+}
+```
+
+
+```{r}
+signif(quality.an[, , "sample"], 2)
+sapply(correct.vc,
+       function(correct.c) {
+         apply(quality.an[, c("correl_inj_pca", "pool_spread_pca"), correct.c],
+               2,
+               function(x) c(mean = mean(x), sd = sd(x), median = median(x), min = min(x), max = max(x)))
+       })
+for(correct.c in correct.vc)
+   print(signif(apply(quality.an[, c("correl_inj_pca", "pool_spread_pca"), correct.c],
+               2,
+               function(x) c(mean = mean(x), sd = sd(x))), 2))
+knitr::kable(signif(quality.an[, , "sample"], 2))
+```
+
+choisir les colonnes pca_corr_inj et pca_pool_spread
+faire apparaitre les valeurs sur les scoreplots
+montrer que c'est un compromis par rapport aux methodes none et pool (mean/median, min, max)
+calculer les CV sur les pools, les samples (pour WT/LAT/MX2); idem en proteomique et en preclinique
+
+For each drift correction, PCA score plot of each dataset
+
+```{r metabo_quality_scoreplots}
+for (correct.c in correct.vc) {
+  metabo.mset <- metabo_mset.ls[[correct.c]]
+  scoreplot.ls <- vector(mode = "list", length = length(ProMetIS::metabo_sets.vc()))
+  names(scoreplot.ls) <- ProMetIS::metabo_sets.vc()
+  
+  for (set.c in ProMetIS::metabo_sets.vc()) {
     
-    # setting last 'pool1' before 'sample' to 'pool'
+    eset <- metabo.mset[[set.c]]
     pdata.df <- Biobase::pData(eset)
-    pdata_ord.df <- pdata.df[order(pdata.df[, "injectionOrder"]), ]
-    rowname.c <- rownames(pdata_ord.df)[which(pdata_ord.df[, "sampleType"] == "sample")[1] - 1]
-    pdata.df[rowname.c, "sampleType"] <- "pool"
+    pdata.df[, "order"] <- pdata.df[, "injectionOrder"]
+    if (grepl("acqui", set.c))
+      pdata.df[, "order"] <- pdata.df[, "order"] - min(pdata.df[, "order"]) + 1
+    pdata.df[, "label"] <- ifelse(pdata.df[, "sampleType"] == "pool", "QC", "s")
     Biobase::pData(eset) <- pdata.df
-    
-  } else {
-    
-    # setting the first injectionOrder to 1
-    Biobase::pData(eset)[, "injectionOrder"] <- Biobase::pData(eset)[, "injectionOrder"] - min(Biobase::pData(eset)[, "injectionOrder"]) + 1
+    eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
+    scoreplot.ls[[set.c]] <- ProMetIS:::score_plotly(eset.pca,
+                                                     label.c = "label",
+                                                     color.c = "order",
+                                                                                                          title.c = gsub("metabolomics_", "", set.c),
+                                                     # title.c = paste0(gsub("metabolomics_", "", set.c), "\n(corr. inj.: ", round(quality.an[gsub("metabolomics_", "", set.c), "correl_inj_pca", "sample"]), "%)"),
+                                                     figure.c = "interactive",
+                                                     size.ls = list(axis_lab.i = 12,
+                                                                    axis_text.i = 10,
+                                                                    point.i = 2,
+                                                                    label.i = 4,
+                                                                    title.i = 15,
+                                                                    legend_title.i = 10,
+                                                                    legend_text.i = 10),
+                                                     plot.l = FALSE)
     
   }
-    
-  eset <- phenomis::correcting(eset,
-                               reference.c = "sample",
-                               title.c = gsub("metabolomics_", "", set.c),
-                               span.n = 2,
-                               figure.c = "none")
-
-  # NAs and variances
   
-  eset <- phenomis::filtering(eset, max_na_prop.n = 0)
-  
-  # pool CV <= 0.3
-  
-  eset <- phenomis::inspecting(eset, figure.c = "none", report.c = "none")
-  
-  eset <- eset[which(Biobase::fData(eset)[, "pool_CV"] <= 0.3), ]
-
-  # poolCV_over_sampleCV <= 1
-  
-  eset <- eset[which(Biobase::fData(eset)[, "poolCV_over_sampleCV"] <= 1), ]
-  
-  # ... (skipping the final steps of the post-processing)
-  
-  # Updating the eset object
-  
-  stopifnot(methods::validObject(eset))
-  
-  metabo.mset <- MultiDataSet::add_eset(metabo.mset,
-                                        eset,
-                                        dataset.type = set.c,
-                                        GRanges = NA,
-                                        overwrite = TRUE,
-                                        warnings = FALSE)
-
+  scoreplots.p <- gridExtra::grid.arrange(grobs = scoreplot.ls[c("metabolomics_liver_c18hyper_pos",
+                                                                 "metabolomics_plasma_c18hyper_pos",
+                                                                 "metabolomics_plasma_c18acqui_pos",
+                                                                 "metabolomics_liver_hilic_neg",
+                                                                 "metabolomics_plasma_hilic_neg",
+                                                                 "metabolomics_plasma_c18acqui_neg")],
+                                          nrow = 2)
+  ggplot2::ggsave(paste0("figures/article_data/metabo_qc_", correct.c, ".png"), scoreplots.p, width = 12)
 }
+
 ```
 
 ```{r}
-knitr::kable(signif(ProMetIS:::.metabo_qcmetrics(metabo.mset = metabo.mset), 2))
+stat.mset <- phenomis::reading(ProMetIS::post_processed_dir.c())
+stat.mset <- stat.mset[, ProMetIS::metabo_sets.vc()]
+phenomis::inspecting(stat.mset)
 ```
 
-```{r}
 
-```
-
-
-
-```{r metabo_qc_display}
-scoreplot.ls <- vector(mode = "list", length = length(ProMetIS::metabo_sets.vc()))
-names(scoreplot.ls) <- ProMetIS::metabo_sets.vc()
-
-for (set.c in ProMetIS::metabo_sets.vc()) {
-
-  eset <- metabo.mset[[set.c]]
-  pdata.df <- Biobase::pData(eset)
-  pdata.df[, "order"] <- pdata.df[, "injectionOrder"]
-  pdata.df[, "label"] <- ifelse(pdata.df[, "sampleType"] == "pool", "QC", "s")
-  Biobase::pData(eset) <- pdata.df
-  eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
-  scoreplot.ls[[set.c]] <- ProMetIS:::score_plotly(eset.pca,
-                                                   label.c = "label",
-                                                   color.c = "order",
-                                                   title.c = gsub("metabolomics_", "", set.c),
-                                                   figure.c = "interactive",
-                                                   size.ls = list(axis_lab.i = 12,
-                                                                  axis_text.i = 10,
-                                                                  point.i = 2,
-                                                                  label.i = 4,
-                                                                  title.i = 15,
-                                                                  legend_title.i = 10,
-                                                                  legend_text.i = 10),
-                                                   plot.l = FALSE)
-  
-}
-
-scoreplots.p <- gridExtra::grid.arrange(grobs = scoreplot.ls[c("metabolomics_liver_c18hyper_pos",
-                                                               "metabolomics_plasma_c18hyper_pos",
-                                                               "metabolomics_plasma_c18acqui_pos",
-                                                               "metabolomics_liver_hilic_neg",
-                                                               "metabolomics_plasma_hilic_neg",
-                                                               "metabolomics_plasma_c18acqui_neg")],
-                                        nrow = 2)
-ggplot2::ggsave("figures/article_data/metabo_qc.png", scoreplots.p, width = 12)
-```
 
 
