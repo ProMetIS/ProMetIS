@@ -41,76 +41,76 @@ mice.ls <- list(id.df = mice_id.df,
                 num.vc = mice_num.vc)
 ```
 
-# Clinics
+# Preclinical
 
 ## Loading
 
-```{r clinics_loading}
-clinic_setname.c <- "clinics"
+```{r preclinical_loading}
+preclinic_setname.c <- "preclinical"
 
 # table from PHENOMIN (47 * 1098)
-clinic_raw.df <- read.table(file.path(ProMetIS::processed_dir.c(),
-                                      clinic_setname.c,
+preclinic_raw.df <- read.table(file.path(ProMetIS::processed_dir.c(),
+                                      preclinic_setname.c,
                                       "phenomin.tsv"),
                             check.names = FALSE, comment.char = "",
                             header = TRUE, quote = "", sep = "\t")
-clinic_proc_names.vc <- colnames(clinic_raw.df)
-colnames(clinic_raw.df) <- make.names(colnames(clinic_raw.df), unique = TRUE)
+preclinic_proc_names.vc <- colnames(preclinic_raw.df)
+colnames(preclinic_raw.df) <- make.names(colnames(preclinic_raw.df), unique = TRUE)
 
 # checking sample order
-stopifnot(identical(clinic_raw.df[, "mouse_nb"],
-                    sort(clinic_raw.df[, "mouse_nb"])))
+stopifnot(identical(preclinic_raw.df[, "mouse_nb"],
+                    sort(preclinic_raw.df[, "mouse_nb"])))
 ```
 
 ## sampleMetadata
 
-```{r clinics_sampleMetadata}
+```{r preclinical_sampleMetadata}
 # restricting to the 42 samples analyzed in ProMetIS
 
-clinic_raw.df <- clinic_raw.df[as.character(clinic_raw.df[, "mouse_nb"]) %in% mice_num.vc, ]
-stopifnot(identical(as.character(clinic_raw.df[, "mouse_nb"]), mice_num.vc))
-rownames(clinic_raw.df) <- mice_id.vc
+preclinic_raw.df <- preclinic_raw.df[as.character(preclinic_raw.df[, "mouse_nb"]) %in% mice_num.vc, ]
+stopifnot(identical(as.character(preclinic_raw.df[, "mouse_nb"]), mice_num.vc))
+rownames(preclinic_raw.df) <- mice_id.vc
 
 # sampleMetadata (42 * 1098)
 
-clinic_pda.df <- clinic_raw.df
+preclinic_pda.df <- preclinic_raw.df
 
 # labeling the 'initial' information (to be kept at the end of the
 # sampleMetadata and variableMetadata tables)
 
-supp.vi <- which(!(colnames(clinic_pda.df) %in% ProMetIS:::.varLabels_first.ls()[["clinics"]]))
+supp.vi <- which(!(colnames(preclinic_pda.df) %in% ProMetIS:::.varLabels_first.ls()[["preclinical"]]))
 stopifnot(length(supp.vi) == 1091)
-colnames(clinic_pda.df)[supp.vi] <- paste0("supp_",
-                                           colnames(clinic_pda.df)[supp.vi])
+colnames(preclinic_pda.df)[supp.vi] <- paste0("supp_",
+                                           colnames(preclinic_pda.df)[supp.vi])
 ```
 
 ## dataMatrix
 
-```{r clinics_dataMatrix}
+```{r preclinical_dataMatrix}
 # initial dataMatrix (42 * 1091)
 
-variable.vi <-  which(!(colnames(clinic_raw.df) %in% ProMetIS:::.varLabels_first.ls()[["clinics"]]))
+variable.vi <-  which(!(colnames(preclinic_raw.df) %in% ProMetIS:::.varLabels_first.ls()[["preclinical"]]))
 stopifnot(length(variable.vi) == 1091)
-clinic_dat.df <- clinic_raw.df[, variable.vi]
-dat_proc_names.vc <- clinic_proc_names.vc[variable.vi]
+preclinic_dat.df <- preclinic_raw.df[, variable.vi]
+dat_proc_names.vc <- preclinic_proc_names.vc[variable.vi]
 
-rm(clinic_raw.df)
-rm(clinic_proc_names.vc)
+rm(preclinic_raw.df)
+rm(preclinic_proc_names.vc)
 
 ## discarding variables which cannot be converted to numerics
 ### removing 1 variable with all values identical except 1 (for "W627m")
 ### note that all 'Test.de.Tolérance.au.Glucose' tests have a 'NA' value for this mouse only
 
 discard_imagerie.vl <- grepl("Imagerie.du.squelette.par.rayons.X.Digits.integrity",
-                             colnames(clinic_dat.df))
+                             colnames(preclinic_dat.df))
 stopifnot(sum(discard_imagerie.vl) == 1)
 
 ### removing date of sacrifice
-discard_sacrifice.vl <- grepl("Date.of.sacrifice", colnames(clinic_dat.df))
+discard_sacrifice.vl <- grepl("Date.of.sacrifice", colnames(preclinic_dat.df))
 stopifnot(sum(discard_sacrifice.vl) == 2)
 
 ### removing 471 columns with NA or "" values only
-discard_navoid.vl <- apply(clinic_dat.df, 2,
+discard_navoid.vl <- apply(preclinic_dat.df, 2,
                            function(y) {
                              unique.vc <- unique(as.character(y))
                              unique.vc <- unique.vc[!is.na(unique.vc) & (unique.vc != "")]
@@ -123,24 +123,24 @@ discard_feat.vl <- discard_imagerie.vl |
   discard_navoid.vl
 stopifnot(sum(discard_feat.vl) == 481)
 
-clinic_dat.df <- clinic_dat.df[, !discard_feat.vl]
+preclinic_dat.df <- preclinic_dat.df[, !discard_feat.vl]
 dat_proc_names.vc <- dat_proc_names.vc[!discard_feat.vl]
 
 ## keeping numerics and factors with nlevels > 2
 
-clinic_class.vc <- sapply(clinic_dat.df, data.class)
-stopifnot(identical(unique(clinic_class.vc), c("numeric", "factor")))
+preclinic_class.vc <- sapply(preclinic_dat.df, data.class)
+stopifnot(identical(unique(preclinic_class.vc), c("numeric", "factor")))
 
 ## selecting numerics (678)
-keep_numeric.vl <- clinic_class.vc == "numeric"
+keep_numeric.vl <- preclinic_class.vc == "numeric"
 stopifnot(sum(keep_numeric.vl) == 571)
 
 ## selecting factors with 2 levels (45)
-keep_factor2.vl <- logical(ncol(clinic_dat.df))
-for (j in which(clinic_class.vc == "factor")) {
-  clinic_dat.f <- clinic_dat.df[, j]
-  if (nlevels(clinic_dat.f) == 2) {
-    clinic_dat.df[, j] <- as.integer(clinic_dat.df[, j])
+keep_factor2.vl <- logical(ncol(preclinic_dat.df))
+for (j in which(preclinic_class.vc == "factor")) {
+  preclinic_dat.f <- preclinic_dat.df[, j]
+  if (nlevels(preclinic_dat.f) == 2) {
+    preclinic_dat.df[, j] <- as.integer(preclinic_dat.df[, j])
     keep_factor2.vl[j] <- TRUE
   }
 }
@@ -150,28 +150,28 @@ stopifnot(sum(keep_factor2.vl) == 1)
 keep_aggreg.vl <- keep_numeric.vl |
   keep_factor2.vl
 stopifnot(sum(keep_aggreg.vl) == 572)
-clinic_dat.mn <- as.matrix(clinic_dat.df[, keep_aggreg.vl])
+preclinic_dat.mn <- as.matrix(preclinic_dat.df[, keep_aggreg.vl])
 dat_proc_names.vc <- dat_proc_names.vc[keep_aggreg.vl]
 
 ## removing variables with > 20% NA (including 100% NA in females)
 ## or with variance < 1e-5
-keep_notna_zerovar.vl <- ProMetIS:::.filter_na_zerovar(clinic_dat.mn,
+keep_notna_zerovar.vl <- ProMetIS:::.filter_na_zerovar(preclinic_dat.mn,
                                                        na_thresh.n = 0.2,
                                                        var_thresh.n = 1e-5)
 
 stopifnot(sum(keep_notna_zerovar.vl) == 213)
-clinic_dat.mn <- clinic_dat.mn[, keep_notna_zerovar.vl]
+preclinic_dat.mn <- preclinic_dat.mn[, keep_notna_zerovar.vl]
 dat_proc_names.vc <- dat_proc_names.vc[keep_notna_zerovar.vl]
 
-stopifnot(identical(dim(clinic_dat.mn), as.integer(c(42, 213))))
+stopifnot(identical(dim(preclinic_dat.mn), as.integer(c(42, 213))))
 ```
 
 
 ## variableMetadata
 
-```{r clinics_variableMetadata}
+```{r preclinical_variableMetadata}
 # variableMetadata (238 * 2)
-category.vc <- sapply(colnames(clinic_dat.mn),
+category.vc <- sapply(colnames(preclinic_dat.mn),
                       function(name.c)
                         unlist(strsplit(name.c,
                                         split = ".",
@@ -187,7 +187,7 @@ category.vc <- gsub("Auditory", "Auditory and PPI",
                                                        gsub("Test", "Glucose tolerance test",
                                                             gsub("Ultrafocus", "Body composition",
                                                                  category.vc))))))))))
-full.vc <- sapply(colnames(clinic_dat.mn),
+full.vc <- sapply(colnames(preclinic_dat.mn),
                   function(name.c) {
                     name.vc <- unlist(strsplit(name.c,
                                                split = ".",
@@ -200,22 +200,22 @@ full.vc <- sapply(colnames(clinic_dat.mn),
                       return(paste(name.vc, collapse = "_"))
                     }
                   })
-clinic_fda.df <- data.frame(row.names = colnames(clinic_dat.mn),
+preclinic_fda.df <- data.frame(row.names = colnames(preclinic_dat.mn),
                             initial_names = dat_proc_names.vc,
                             category = category.vc,
                             full_info = full.vc,
                             stringsAsFactors = FALSE)
-stopifnot(identical(dim(clinic_fda.df), as.integer(c(213, 3))))
+stopifnot(identical(dim(preclinic_fda.df), as.integer(c(213, 3))))
 ```
 
 ## ExpressionSet
 
-```{r clinics_ExpressionSet}
+```{r preclinical_ExpressionSet}
 # converting to ExpressionSet
-clinic.eset <- Biobase::ExpressionSet(assayData = t(clinic_dat.mn),
-                                      phenoData = Biobase::AnnotatedDataFrame(data = clinic_pda.df),
-                                      featureData = Biobase::AnnotatedDataFrame(data = clinic_fda.df),
-                                      experimentData = Biobase::MIAME(title = clinic_setname.c))
+clinic.eset <- Biobase::ExpressionSet(assayData = t(preclinic_dat.mn),
+                                      phenoData = Biobase::AnnotatedDataFrame(data = preclinic_pda.df),
+                                      featureData = Biobase::AnnotatedDataFrame(data = preclinic_fda.df),
+                                      experimentData = Biobase::MIAME(title = preclinic_setname.c))
 stopifnot(methods::validObject(clinic.eset))
 
 print(clinic.eset)
@@ -223,12 +223,12 @@ print(clinic.eset)
 
 ## Saving (not run)
 
-```{r clinics_saving}
+```{r preclinical_saving}
 phenomis::writing(clinic.eset,
                   file.path(gsub(ProMetIS::data_dir.c(),
                                  "../../ProMetIS/inst/extdata",
                                  ProMetIS::post_processed_dir.c()),
-                            clinic_setname.c),
+                            preclinic_setname.c),
                   overwrite.l = TRUE)
 ```
 

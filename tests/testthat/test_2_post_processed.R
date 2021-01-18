@@ -23,7 +23,7 @@ testthat::test_that("dimensions", {
   #             apply(post_proc_dim.mn, 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_dim.vc <- c("clinics|213|42",
+  test_dim.vc <- c("preclinical|213|42",
                    "metabolomics_liver_c18hyper_pos|6209|42",
                    "metabolomics_liver_hilic_neg|2566|42",
                    "metabolomics_plasma_c18acqui_neg|1612|42",

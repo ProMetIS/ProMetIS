@@ -29,18 +29,18 @@ setMethod("subsetting", signature(x = "MultiDataSet"),
               
               stopifnot(tissues.vc %in% ProMetIS::tissues.vc())
               
-              x <- x[, names(x)[names(x) %in% c("clinics",
-                                                            grep(tissues.vc,
-                                                                 ProMetIS::sets.vc(),
-                                                                 value = TRUE))]]
+              x <- x[, names(x)[names(x) %in% c("preclinical",
+                                                grep(tissues.vc,
+                                                     ProMetIS::sets.vc(),
+                                                     value = TRUE))]]
               
             }
             
             if (common_samples.l) {
               x <- MultiDataSet::commonSamples(x)
               ref.eset <- x[[names(x)[1]]]
-            } else if ("clinics" %in% names(x)) {
-              ref.eset <- x[["clinics"]]
+            } else if ("preclinical" %in% names(x)) {
+              ref.eset <- x[["preclinical"]]
             } else {
               sample_names.ls <- Biobase::sampleNames(x)
               all_samples.vc <- Reduce("union", sample_names.ls)
@@ -295,7 +295,7 @@ order_mset <- function(mset) {
                          "mouse_nb",
                          "sex")
            
-           if (set.c == "clinics")
+           if (set.c == "preclinical")
              add.vc <- c("mouse_id",
                          "genotype",
                          "project")
@@ -333,7 +333,7 @@ order_mset <- function(mset) {
                          "biosigner",
                          "mixomics")
            
-           if (set.c == "clinics")
+           if (set.c == "preclinical")
              add.vc <- c("initial_names",
                          "category",
                          "full_info")

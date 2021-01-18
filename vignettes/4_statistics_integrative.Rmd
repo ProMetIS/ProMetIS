@@ -65,14 +65,14 @@ for (gene.c in ProMetIS::genes.vc()) {
     
     # mset <- ProMetIA::abbrev_mset(mset)
     
-    clinics.eset <- mset[["clinics"]]
+    preclinical.eset <- mset[["preclinical"]]
     
-    gene.fc <- factor(Biobase::pData(clinics.eset)[, "gene"],
+    gene.fc <- factor(Biobase::pData(preclinical.eset)[, "gene"],
                       levels = wtgene.vc)
-    sex.fc <- factor(Biobase::pData(clinics.eset)[, "sex"],
+    sex.fc <- factor(Biobase::pData(preclinical.eset)[, "sex"],
                       levels = ProMetIS::sex.vc())
     
-    mset <- mset[, setdiff(names(mset), "clinics")]
+    mset <- mset[, setdiff(names(mset), "preclinical")]
     
     exprs.ls <- MultiDataSet::as.list(mset)
     
@@ -240,7 +240,7 @@ net_work <- lapply(sgccda.ls,
 
 ```{r}
 
-for (set.c in setdiff(ProMetIS::sets.vc(), "clinics")) {
+for (set.c in setdiff(ProMetIS::sets.vc(), "preclinical")) {
   
   eset <- latmx2.mset[[set.c]]
   

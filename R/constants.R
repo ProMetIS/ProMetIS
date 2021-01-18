@@ -32,7 +32,7 @@ palette.vc <- function(light.l = FALSE) {
 
 #' @export
 sets.vc <- function() {
-  c("clinics",
+  c("preclinical",
     
     "proteomics_liver",
     "proteomics_plasma",

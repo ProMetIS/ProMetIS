@@ -53,7 +53,7 @@ for (gene.c in ProMetIS::genes.vc()) {
   data_dims.mn <- cbind(data_dims.mn, gene_dims.mn)
 }
 
-data_dims.mn <- data_dims.mn[c("clinics",
+data_dims.mn <- data_dims.mn[c("preclinical",
                                "proteomics_liver",
                                "metabolomics_liver_c18hyper_pos",
                                "metabolomics_liver_hilic_neg",
@@ -63,7 +63,7 @@ data_dims.mn <- data_dims.mn[c("clinics",
                                "metabolomics_plasma_c18acqui_pos",
                                "metabolomics_plasma_c18acqui_neg"), ]
 
-rownames(data_dims.mn) <- c("clinics",
+rownames(data_dims.mn) <- c("preclinical",
                             "liver_proteomics",
                             "liver_metabo_c18hyper_pos",
                             "liver_metabo_hilic_neg",
@@ -97,9 +97,9 @@ grDevices::dev.off()
 # Preclinical features
 
 ```{r preclinical}
-clinics.eset <- mset.ls[["LAT"]][["clinics"]]
+preclinical.eset <- mset.ls[["LAT"]][["preclinical"]]
 
-p <- phenomis::gg_pie(Biobase::fData(clinics.eset), y.c = "category",
+p <- phenomis::gg_pie(Biobase::fData(preclinical.eset), y.c = "category",
                  title.c = "Preclinical variables",
                  geom_text.ls = list(lab.i = 4, legend_text.i = 8, title.i = 18),
                  label.c = "value")

@@ -11,7 +11,7 @@ testthat::test_that("dimensions", {
   #             apply(stat_intra_dim.mn, 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_dim.vc <- c("clinics|213|42",
+  test_dim.vc <- c("preclinical|213|42",
                    "metabolomics_liver_c18hyper_pos|6209|42",
                    "metabolomics_liver_hilic_neg|2566|42",
                    "metabolomics_plasma_c18acqui_neg|1612|42",
@@ -53,7 +53,7 @@ testthat::test_that("significant", {
   #             apply(stat_intra_signif.mn, 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_signif.vc <- c("clinics|0|NA|1",
+  test_signif.vc <- c("preclinical|0|NA|1",
                       "metabolomics_liver_c18hyper_pos|2133|NA|91",
                       "metabolomics_liver_hilic_neg|760|NA|24",
                       "metabolomics_plasma_c18acqui_neg|3|NA|1",
