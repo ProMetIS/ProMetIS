@@ -14,7 +14,7 @@ subsetting(
   tissues.vc = "all",
   common_samples.l = FALSE,
   na_thresh.n = 0.2,
-  var_thresh.n = 1e-05,
+  var_thresh.n = .Machine$double.eps,
   imputed_thresh.n = 0.2
 )
 
@@ -26,7 +26,7 @@ subsetting(
   tissues.vc = "all",
   common_samples.l = FALSE,
   na_thresh.n = 0.2,
-  var_thresh.n = 1e-05,
+  var_thresh.n = .Machine$double.eps,
   imputed_thresh.n = 0.2
 )
 
@@ -38,7 +38,7 @@ subsetting(
   tissues.vc = NULL,
   common_samples.l = NULL,
   na_thresh.n = 0.2,
-  var_thresh.n = 1e-05,
+  var_thresh.n = .Machine$double.eps,
   imputed_thresh.n = 0.2
 )
 }

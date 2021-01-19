@@ -12,7 +12,7 @@ setMethod("subsetting", signature(x = "MultiDataSet"),
                    tissues.vc = "all",
                    common_samples.l = FALSE,
                    na_thresh.n = 0.2,
-                   var_thresh.n = 1e-5,
+                   var_thresh.n = .Machine$double.eps,
                    imputed_thresh.n = 0.2) {
             
             if (length(genes.vc) == 1 && genes.vc == "all")
@@ -100,7 +100,7 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
                    tissues.vc = NULL,
                    common_samples.l = NULL,
                    na_thresh.n = 0.2,
-                   var_thresh.n = 1e-5,
+                   var_thresh.n = .Machine$double.eps,
                    imputed_thresh.n = 0.2) {
             
             if (length(genes.vc) == 1 && genes.vc == "all")
@@ -131,6 +131,7 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
             # proteomics: observations >= 80% in at least one condition
             if (grepl("proteomics", set.c)) {
               overimputed_sel.vl <- ProMetIS:::.filter_overimputed(eset = x,
+                                                                   set.c = set.c,
                                                                    genes.vc = genes.vc,
                                                                    sex.vc = sex.vc,
                                                                    imputed_thresh.n = imputed_thresh.n)
@@ -184,17 +185,25 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
 
 
 .filter_overimputed <- function(eset,
+                                set.c,
                                 genes.vc,
                                 sex.vc,
                                 imputed_thresh.n) {
   
-  fdata.df <- Biobase::fData(eset)
+  # fdata.df <- Biobase::fData(eset)
+  # 
+  # imputed.vc <- paste0("imputed_", Biobase::sampleNames(eset))
+  # 
+  # stopifnot(all(imputed.vc %in% colnames(fdata.df)))
+  # 
+  # imputed.mi <- fdata.df[, imputed.vc]
   
-  imputed.vc <- paste0("imputed_", Biobase::sampleNames(eset))
   
-  stopifnot(all(imputed.vc %in% colnames(fdata.df)))
+  load(system.file("extdata/2_post_processed/proteomics_imputed.rdata", package = "ProMetIS"))
   
-  imputed.mi <- fdata.df[, imputed.vc]
+  imputed.mi <- proteomics_imputed.ls[[set.c]]
+  
+  stopifnot(identical(Biobase::sampleNames(eset), colnames(imputed.mi)))
   
   if (length(genes.vc) >= 2) {
     # general case: no restriction about sex
@@ -505,125 +514,125 @@ DAPAR_is.MV <- function(data)
 #' Computing the 'imputation' sample nb and percent (i.e. 'imputed by Prostar')
 #' for each variable (for the variables with too high imputation metric in both
 #' genotype conditions to be removed in the statistical analysis )
-#' @export
-imputation_metrics <- function(eset) {
-  
-  prot_pda.df <- Biobase::pData(eset)
-  prot_fda.df <- Biobase::fData(eset)
-  prot_samp.vc <- Biobase::sampleNames(eset)
-  
-  ## checking that the sample names are ordered by increasing ID
-  prot_samp.vi <- as.integer(substr(prot_samp.vc, 2, 4))
-  stopifnot(identical(prot_samp.vi, sort(prot_samp.vi)))
-  
-  ## getting imputation info
-  value_origin.df <- prot_fda.df[, grep("OriginOfValueabundance",
-                                        colnames(prot_fda.df), value = TRUE)]
-  colnames(value_origin.df) <- gsub("_run90methode30K",
-                                    "",
-                                    gsub("_mgf", "",
-                                         gsub("supp_OriginOfValueabundance_", "",
-                                              colnames(value_origin.df))))
-  
-  ## re-ordering imputation info to match sample names
-  if (Biobase::experimentData(eset)@title == "proteomics_liver") {
-    file_to_sample.vc <- prot_pda.df[, "supp_sample name"]
-    names(file_to_sample.vc) <- gsub("abundance_", "",
-                                     gsub(".mgf", "",
-                                          prot_pda.df[, "supp_Sample.name"], fixed = TRUE))
-    colsel.vl <- colnames(value_origin.df) %in% names(file_to_sample.vc)
-    value_origin.df <- value_origin.df[, colsel.vl]
-    colnames(value_origin.df) <- file_to_sample.vc[colnames(value_origin.df)]
-  }
-  
-  value_samp.vi <- as.integer(colnames(value_origin.df), 1, 3)
-  value_origin.df <- value_origin.df[, order(value_samp.vi)]
-  
-  ## getting genotype factor
-  gene.fc <- factor(prot_pda.df[, "gene"],
-                    levels = c("WT", ProMetIS::genes.vc()))
-  
-  ## getting sex factor
-  sex.fc <- factor(prot_pda.df[, "sex"],
-                   levels = ProMetIS::sex.vc())
-  
-  ## WT, LAT and MX2 imputation metric
-  imputed.mn <- t(apply(value_origin.df, 1, function(value.vc) {
-    tapply(value.vc, gene.fc, function(x) sum(DAPAR_is.MV(x)))
-  }))
-  imputed.mn <- round(sweep(imputed.mn, 2, table(gene.fc), "/"), 2)
-  colnames(imputed.mn) <- paste0("imputed_mfWLX_", colnames(imputed.mn))
-  
-  prot_fda.df <- cbind.data.frame(prot_fda.df,
-                                  imputed.mn)
-  
-  if (Biobase::experimentData(eset)@title == "proteomics_liver") {
-    
-    ## LAT and WT imputation metric by sex
-    ### M
-    mWL_sel.vl <- gene.fc %in% c("WT", "LAT") & sex.fc == "M"
-    mWL_gene.fc <- factor(gene.fc[mWL_sel.vl])
-    mWL_value.df <- value_origin.df[, mWL_sel.vl]
-    
-    mWL_imputed.mn <- t(apply(mWL_value.df, 1, function(value.vc) {
-      tapply(value.vc, mWL_gene.fc, function(x) sum(DAPAR_is.MV(x)))
-    }))
-    mWL_imputed.mn <- round(sweep(mWL_imputed.mn, 2,
-                                  table(mWL_gene.fc), "/"), 2)
-    colnames(mWL_imputed.mn) <- paste0("imputed_mWL_",
-                                       colnames(mWL_imputed.mn))
-    
-    ### F
-    fWL_sel.vl <- gene.fc %in% c("WT", "LAT") & sex.fc == "F"
-    fWL_gene.fc <- factor(gene.fc[fWL_sel.vl])
-    fWL_value.df <- value_origin.df[, fWL_sel.vl]
-    
-    fWL_imputed.mn <- t(apply(fWL_value.df, 1, function(value.vc) {
-      tapply(value.vc, fWL_gene.fc, function(x) sum(DAPAR_is.MV(x)))
-    }))
-    fWL_imputed.mn <- round(sweep(fWL_imputed.mn, 2,
-                                  table(fWL_gene.fc), "/"), 2)
-    colnames(fWL_imputed.mn) <- paste0("imputed_fWL_",
-                                       colnames(fWL_imputed.mn))
-    
-    ## M and F imputation by (LAT/WT)
-    ### WT
-    mfW_sel.vl <- gene.fc == "WT"
-    mfW_sex.fc <- factor(sex.fc[mfW_sel.vl])
-    mfW_value.df <- value_origin.df[, mfW_sel.vl]
-    
-    mfW_imputed.mn <- t(apply(mfW_value.df, 1, function(value.vc) {
-      tapply(value.vc, mfW_sex.fc, function(x) sum(DAPAR_is.MV(x)))
-    }))
-    mfW_imputed.mn <- round(sweep(mfW_imputed.mn, 2,
-                                  table(mfW_sex.fc), "/"), 2)
-    colnames(mfW_imputed.mn) <- paste0("imputed_mfW_",
-                                       colnames(mfW_imputed.mn)) 
-    
-    ### LAT
-    mfL_sel.vl <- gene.fc == "LAT"
-    mfL_sex.fc <- factor(sex.fc[mfL_sel.vl])
-    mfL_value.df <- value_origin.df[, mfL_sel.vl]
-    
-    mfL_imputed.mn <- t(apply(mfL_value.df, 1, function(value.vc) {
-      tapply(value.vc, mfL_sex.fc, function(x) sum(DAPAR_is.MV(x)))
-    }))
-    mfL_imputed.mn <- round(sweep(mfL_imputed.mn, 2,
-                                  table(mfL_sex.fc), "/"), 2)
-    colnames(mfL_imputed.mn) <- paste0("imputed_mfL_",
-                                       colnames(mfL_imputed.mn))
-    
-    
-    prot_fda.df <- cbind.data.frame(prot_fda.df,
-                                    mWL_imputed.mn,
-                                    fWL_imputed.mn,
-                                    mfW_imputed.mn,
-                                    mfL_imputed.mn)
-    
-  }
-  
-  Biobase::fData(eset) <- prot_fda.df
-  
-  eset
-  
-}
+# #' @export
+# imputation_metrics <- function(eset) {
+#   
+#   prot_pda.df <- Biobase::pData(eset)
+#   prot_fda.df <- Biobase::fData(eset)
+#   prot_samp.vc <- Biobase::sampleNames(eset)
+#   
+#   ## checking that the sample names are ordered by increasing ID
+#   prot_samp.vi <- as.integer(substr(prot_samp.vc, 2, 4))
+#   stopifnot(identical(prot_samp.vi, sort(prot_samp.vi)))
+#   
+#   ## getting imputation info
+#   value_origin.df <- prot_fda.df[, grep("OriginOfValueabundance",
+#                                         colnames(prot_fda.df), value = TRUE)]
+#   colnames(value_origin.df) <- gsub("_run90methode30K",
+#                                     "",
+#                                     gsub("_mgf", "",
+#                                          gsub("supp_OriginOfValueabundance_", "",
+#                                               colnames(value_origin.df))))
+#   
+#   ## re-ordering imputation info to match sample names
+#   if (Biobase::experimentData(eset)@title == "proteomics_liver") {
+#     file_to_sample.vc <- prot_pda.df[, "supp_sample name"]
+#     names(file_to_sample.vc) <- gsub("abundance_", "",
+#                                      gsub(".mgf", "",
+#                                           prot_pda.df[, "supp_Sample.name"], fixed = TRUE))
+#     colsel.vl <- colnames(value_origin.df) %in% names(file_to_sample.vc)
+#     value_origin.df <- value_origin.df[, colsel.vl]
+#     colnames(value_origin.df) <- file_to_sample.vc[colnames(value_origin.df)]
+#   }
+#   
+#   value_samp.vi <- as.integer(colnames(value_origin.df), 1, 3)
+#   value_origin.df <- value_origin.df[, order(value_samp.vi)]
+#   
+#   ## getting genotype factor
+#   gene.fc <- factor(prot_pda.df[, "gene"],
+#                     levels = c("WT", ProMetIS::genes.vc()))
+#   
+#   ## getting sex factor
+#   sex.fc <- factor(prot_pda.df[, "sex"],
+#                    levels = ProMetIS::sex.vc())
+#   
+#   ## WT, LAT and MX2 imputation metric
+#   imputed.mn <- t(apply(value_origin.df, 1, function(value.vc) {
+#     tapply(value.vc, gene.fc, function(x) sum(DAPAR_is.MV(x)))
+#   }))
+#   imputed.mn <- round(sweep(imputed.mn, 2, table(gene.fc), "/"), 2)
+#   colnames(imputed.mn) <- paste0("imputed_mfWLX_", colnames(imputed.mn))
+#   
+#   prot_fda.df <- cbind.data.frame(prot_fda.df,
+#                                   imputed.mn)
+#   
+#   if (Biobase::experimentData(eset)@title == "proteomics_liver") {
+#     
+#     ## LAT and WT imputation metric by sex
+#     ### M
+#     mWL_sel.vl <- gene.fc %in% c("WT", "LAT") & sex.fc == "M"
+#     mWL_gene.fc <- factor(gene.fc[mWL_sel.vl])
+#     mWL_value.df <- value_origin.df[, mWL_sel.vl]
+#     
+#     mWL_imputed.mn <- t(apply(mWL_value.df, 1, function(value.vc) {
+#       tapply(value.vc, mWL_gene.fc, function(x) sum(DAPAR_is.MV(x)))
+#     }))
+#     mWL_imputed.mn <- round(sweep(mWL_imputed.mn, 2,
+#                                   table(mWL_gene.fc), "/"), 2)
+#     colnames(mWL_imputed.mn) <- paste0("imputed_mWL_",
+#                                        colnames(mWL_imputed.mn))
+#     
+#     ### F
+#     fWL_sel.vl <- gene.fc %in% c("WT", "LAT") & sex.fc == "F"
+#     fWL_gene.fc <- factor(gene.fc[fWL_sel.vl])
+#     fWL_value.df <- value_origin.df[, fWL_sel.vl]
+#     
+#     fWL_imputed.mn <- t(apply(fWL_value.df, 1, function(value.vc) {
+#       tapply(value.vc, fWL_gene.fc, function(x) sum(DAPAR_is.MV(x)))
+#     }))
+#     fWL_imputed.mn <- round(sweep(fWL_imputed.mn, 2,
+#                                   table(fWL_gene.fc), "/"), 2)
+#     colnames(fWL_imputed.mn) <- paste0("imputed_fWL_",
+#                                        colnames(fWL_imputed.mn))
+#     
+#     ## M and F imputation by (LAT/WT)
+#     ### WT
+#     mfW_sel.vl <- gene.fc == "WT"
+#     mfW_sex.fc <- factor(sex.fc[mfW_sel.vl])
+#     mfW_value.df <- value_origin.df[, mfW_sel.vl]
+#     
+#     mfW_imputed.mn <- t(apply(mfW_value.df, 1, function(value.vc) {
+#       tapply(value.vc, mfW_sex.fc, function(x) sum(DAPAR_is.MV(x)))
+#     }))
+#     mfW_imputed.mn <- round(sweep(mfW_imputed.mn, 2,
+#                                   table(mfW_sex.fc), "/"), 2)
+#     colnames(mfW_imputed.mn) <- paste0("imputed_mfW_",
+#                                        colnames(mfW_imputed.mn)) 
+#     
+#     ### LAT
+#     mfL_sel.vl <- gene.fc == "LAT"
+#     mfL_sex.fc <- factor(sex.fc[mfL_sel.vl])
+#     mfL_value.df <- value_origin.df[, mfL_sel.vl]
+#     
+#     mfL_imputed.mn <- t(apply(mfL_value.df, 1, function(value.vc) {
+#       tapply(value.vc, mfL_sex.fc, function(x) sum(DAPAR_is.MV(x)))
+#     }))
+#     mfL_imputed.mn <- round(sweep(mfL_imputed.mn, 2,
+#                                   table(mfL_sex.fc), "/"), 2)
+#     colnames(mfL_imputed.mn) <- paste0("imputed_mfL_",
+#                                        colnames(mfL_imputed.mn))
+#     
+#     
+#     prot_fda.df <- cbind.data.frame(prot_fda.df,
+#                                     mWL_imputed.mn,
+#                                     fWL_imputed.mn,
+#                                     mfW_imputed.mn,
+#                                     mfL_imputed.mn)
+#     
+#   }
+#   
+#   Biobase::fData(eset) <- prot_fda.df
+#   
+#   eset
+#   
+# }

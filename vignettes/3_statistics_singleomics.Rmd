@@ -51,7 +51,7 @@ gene_mset.ls <- lapply(ProMetIS::genes.vc(),
                        function(gene.c) {
                          message(gene.c)
                          ProMetIS::subsetting(latmx2.mset,
-                                            genes.vc = c("WT", gene.c))
+                                              genes.vc = c("WT", gene.c))
                        })
 names(gene_mset.ls) <- ProMetIS::genes.vc()
 ```

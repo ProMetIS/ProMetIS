@@ -39,6 +39,6 @@ setGeneric("subsetting",
                     tissues.vc = "all",
                     common_samples.l = FALSE,
                     na_thresh.n = 0.2,
-                    var_thresh.n = 1e-5,
+                    var_thresh.n = .Machine$double.eps,
                     imputed_thresh.n = 0.2)
              standardGeneric("subsetting"))

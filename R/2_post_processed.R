@@ -1,53 +1,48 @@
-## Proteomics ----
-
-.format_imputation <- function(eset) {
-  
-  prot_pda.df <- Biobase::pData(eset)
-  prot_fda.df <- Biobase::fData(eset)
-  
-  ## checking that the sample names are ordered by increasing ID
-  prot_samp.vi <- as.integer(substr(Biobase::sampleNames(eset), 2, 4))
-  stopifnot(identical(prot_samp.vi, sort(prot_samp.vi)))
-  
-  ## getting imputation info
-  value_origin.df <- prot_fda.df[, grep("OriginOfValueabundance",
-                                        colnames(prot_fda.df), value = TRUE)]
-  colnames(value_origin.df) <- gsub("_run90methode30K",
-                                    "",
-                                    gsub("_mgf", "",
-                                         gsub("supp_OriginOfValueabundance_", "",
-                                              colnames(value_origin.df))))
-  
-  ## re-ordering imputation info to match sample names
-  if (Biobase::experimentData(eset)@title == "proteomics_liver") {
-    file_to_sample.vc <- prot_pda.df[, "supp_sample name"]
-    names(file_to_sample.vc) <- gsub("abundance_", "",
-                                     gsub(".mgf", "",
-                                          prot_pda.df[, "Sample.name"], fixed = TRUE))
-    colsel.vl <- colnames(value_origin.df) %in% names(file_to_sample.vc)
-    value_origin.df <- value_origin.df[, colsel.vl]
-    colnames(value_origin.df) <- file_to_sample.vc[colnames(value_origin.df)]
-  }
-  
-  value_samp.vi <- as.integer(colnames(value_origin.df), 1, 3)
-  value_origin.df <- value_origin.df[, order(value_samp.vi)]
-  
-  stopifnot(identical(colnames(value_origin.df), as.character(prot_samp.vi)))
-  colnames(value_origin.df) <- Biobase::sampleNames(eset)
-  
-  imputed.mi <- apply(value_origin.df, 2, DAPAR_is.MV)
-  mode(imputed.mi) <- "integer"
-  
-  stopifnot(!any(is.na(c(imputed.mi))))
-  
-  colnames(imputed.mi) <- paste0("imputed_", colnames(imputed.mi))
-  
-  Biobase::fData(eset) <- cbind.data.frame(prot_fda.df,
-                                           imputed.mi)
-  
-  eset
-  
-}
+# ## Proteomics ----
+# 
+# .format_imputation <- function(eset) {
+#   
+#   prot_pda.df <- Biobase::pData(eset)
+#   prot_fda.df <- Biobase::fData(eset)
+#   
+#   ## checking that the sample names are ordered by increasing ID
+#   prot_samp.vi <- as.integer(substr(Biobase::sampleNames(eset), 2, 4))
+#   stopifnot(identical(prot_samp.vi, sort(prot_samp.vi)))
+#   
+#   ## getting imputation info
+#   value_origin.df <- prot_fda.df[, grep("OriginOfValueabundance",
+#                                         colnames(prot_fda.df), value = TRUE)]
+#   colnames(value_origin.df) <- gsub("_run90methode30K",
+#                                     "",
+#                                     gsub("_mgf", "",
+#                                          gsub("OriginOfValueabundance_", "",
+#                                               colnames(value_origin.df))))
+#   
+#   ## re-ordering imputation info to match sample names
+#   if (Biobase::experimentData(eset)@title == "proteomics_liver") {
+#     file_to_sample.vc <- prot_pda.df[, "sample name"]
+#     names(file_to_sample.vc) <- gsub("abundance_", "",
+#                                      gsub(".mgf", "",
+#                                           prot_pda.df[, "Sample.name"], fixed = TRUE))
+#     colsel.vl <- colnames(value_origin.df) %in% names(file_to_sample.vc)
+#     value_origin.df <- value_origin.df[, colsel.vl]
+#     colnames(value_origin.df) <- file_to_sample.vc[colnames(value_origin.df)]
+#   }
+#   
+#   value_samp.vi <- as.integer(colnames(value_origin.df), 1, 3)
+#   value_origin.df <- value_origin.df[, order(value_samp.vi)]
+#   
+#   stopifnot(identical(colnames(value_origin.df), as.character(prot_samp.vi)))
+#   colnames(value_origin.df) <- Biobase::sampleNames(eset)
+#   
+#   imputed.mi <- apply(value_origin.df, 2, DAPAR_is.MV)
+#   mode(imputed.mi) <- "integer"
+#   
+#   stopifnot(!any(is.na(c(imputed.mi))))
+#   
+#   return(imputed.mi)
+#   
+# }
 
 
 ## Metabolomics ----

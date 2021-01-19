@@ -220,7 +220,7 @@ preclinical.eset <- Biobase::ExpressionSet(assayData = t(preclinic_dat.mn),
                                            experimentData = Biobase::MIAME(title = preclinic_setname.c))
 stopifnot(methods::validObject(preclinical.eset))
 
-preclinical.eset <- ProMetIS:::metadata_select(preclinical.eset)[["preclinical"]]
+preclinical.eset <- ProMetIS:::metadata_select(preclinical.eset, step.c = "2_post_processed")[["preclinical"]]
 
 print(preclinical.eset)
 ```
@@ -314,9 +314,9 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
   stopifnot(identical(rownames(proteo_pda.df),
                       sample_names.vc))
   
-  var_select.vl <- colnames(proteo_pda.df) %in% ProMetIS:::.varLabels_first.ls()[[set.c]] 
-  
-  colnames(proteo_pda.df)[!var_select.vl] <- paste0("supp_", colnames(proteo_pda.df))[!var_select.vl]
+  # var_select.vl <- colnames(proteo_pda.df) %in% ProMetIS:::.varLabels_first.ls()[[set.c]] 
+  # 
+  # colnames(proteo_pda.df)[!var_select.vl] <- paste0("supp_", colnames(proteo_pda.df))[!var_select.vl]
   
   Biobase::pData(eset) <- proteo_pda.df
   stopifnot(methods::validObject(eset))
@@ -351,9 +351,9 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
                                                             fixed = TRUE))[2],
                                           USE.NAMES = FALSE)
   
-  supp.vi <- which(!(colnames(proteo_fda.df) %in% ProMetIS:::.fvarLabels_first.ls()[[set.c]]))
-  colnames(proteo_fda.df)[supp.vi] <- paste0("supp_",
-                                             colnames(proteo_fda.df)[supp.vi])
+  # supp.vi <- which(!(colnames(proteo_fda.df) %in% ProMetIS:::.fvarLabels_first.ls()[[set.c]]))
+  # colnames(proteo_fda.df)[supp.vi] <- paste0("supp_",
+  #                                            colnames(proteo_fda.df)[supp.vi])
   
   Biobase::fData(eset) <- proteo_fda.df
   stopifnot(methods::validObject(eset))
@@ -394,11 +394,11 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
   
   # discarding pools
   if (set.c == "proteomics_liver")
-    eset <- eset[, !grepl("(p|P)ool", Biobase::pData(eset)[, "supp_sample name"])]
+    eset <- eset[, !grepl("(p|P)ool", Biobase::pData(eset)[, "sample name"])]
 
   # re-ordering samples
   if (set.c == "proteomics_liver") {
-    eset <- eset[, order(as.integer(Biobase::pData(eset)[, "supp_sample name"]))]
+    eset <- eset[, order(as.integer(Biobase::pData(eset)[, "sample name"]))]
   } else {
     Biobase::sampleNames(eset) <- sapply(Biobase::sampleNames(eset),
                                                  function(samp.c) unlist(strsplit(samp.c, split = "_"))[2], USE.NAMES = FALSE)
@@ -407,15 +407,15 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
   
   # renaming samples
   if (set.c == "proteomics_liver") {
-    Biobase::sampleNames(eset) <- paste0(sapply(Biobase::pData(eset)[, "supp_Condition"],
+    Biobase::sampleNames(eset) <- paste0(sapply(Biobase::pData(eset)[, "Condition"],
                                                         function(cond.c)
                                                           switch(cond.c,
                                                                  mx2 = "X",
                                                                  ctrl = "W",
                                                                  lat = "L")),
-                                                 Biobase::pData(eset)[, "supp_sample name"])
+                                                 Biobase::pData(eset)[, "sample name"])
   } else {
-    Biobase::sampleNames(eset) <- paste0(sapply(Biobase::pData(eset)[, "supp_Condition"],
+    Biobase::sampleNames(eset) <- paste0(sapply(Biobase::pData(eset)[, "Condition"],
                                                         function(cond.c)
                                                           switch(cond.c,
                                                                  Mx2 = "X",
@@ -470,25 +470,25 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 }
 ```
 
-## formatting the 'imputation' metrics
+<!-- ## formatting the 'imputation' metrics -->
 
-```{r proteo_imputation_metrics}
-  for (set.c in ProMetIS::proteo_sets.vc()) {
-    
-    eset <- proteo.mset[[set.c]]
-    
-    eset <- ProMetIS:::.format_imputation(eset)
-    stopifnot(methods::validObject(eset))
-    
-    proteo.mset <- MultiDataSet::add_eset(proteo.mset,
-                                          eset,
-                                          dataset.type = set.c,
-                                          GRanges = NA,
-                                          overwrite = TRUE,
-                                          warnings = FALSE)
-    
-  }
-```
+<!-- ```{r proteo_imputation_metrics} -->
+<!-- proteomics_imputed.ls <- list() -->
+
+<!-- for (set.c in ProMetIS::proteo_sets.vc()) { -->
+
+<!--   eset <- proteo.mset[[set.c]] -->
+
+<!--   proteomics_imputed.ls[[set.c]] <- .format_imputation(eset) -->
+
+<!-- } -->
+
+<!-- save(proteomics_imputed.ls, -->
+<!--      file = file.path(gsub(ProMetIS::data_dir.c(), -->
+<!--                                  "../../ProMetIS/inst/extdata", -->
+<!--                                  ProMetIS::post_processed_dir.c()), -->
+<!--                       "proteomics_imputed.rdata")) -->
+<!-- ``` -->
 
 ## Variable metadata: including new mice ids in the column names (count, abundance, etc.)
 
@@ -504,7 +504,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
   for (i in seq_along(samp.vc)) {
     samp.c <- samp.vc[i]
     samp_id.c <- gsub("abundance_", "", pdata.df[i, "id"])
-    fvar_id.vi <- grep(paste0("^supp_.+", samp_id.c), fvar.vc)
+    fvar_id.vi <- grep(paste0(".+", samp_id.c), fvar.vc)
     fvar.vc[fvar_id.vi] <- gsub(switch(set.c,
                                        proteomics_liver = "mgf",
                                        proteomics_plasma = samp_id.c),
@@ -528,7 +528,7 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 ## Re-ordering metadata ('supp_' columns at the end)
 
 ```{r proteo_reordering_supp}
-proteo.mset <- ProMetIS::order_mset(proteo.mset)
+proteo.mset <- ProMetIS:::metadata_select(proteo.mset, step.c = "2_post_processed")
 ```
 
 
