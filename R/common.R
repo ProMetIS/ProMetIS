@@ -157,8 +157,8 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
 
 
 .filter_na_zerovar <- function(input.mn,
-                               na_thresh.n,
-                               var_thresh.n) {
+                               na_thresh.n = 0.2,
+                               var_thresh.n = .Machine$double.eps) {
   
   # removing variables with > 20% NA (including 100% NA in females)
   feat_na.vn <- apply(input.mn, 2, function(feat.vn)
@@ -234,6 +234,17 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
 metadata_select <- function(mset,
                             step.c = "2_post_processed") {
   
+  if(is.null(names(mset))) { # preclinical expression set
+    preclinical.eset <- mset
+    mset <- MultiDataSet::createMultiDataSet()
+    mset <- MultiDataSet::add_eset(mset,
+                                   preclinical.eset,
+                                   dataset.type = "preclinical",
+                                   GRanges = NA,
+                                   overwrite = TRUE,
+                                   warnings = FALSE)
+  }
+  
   mset_names.vc <- names(mset)
   
   metadata_supp_file.c <- paste0("../inst/extdata/", step.c, "/metadata_supp.rdata")
@@ -294,6 +305,7 @@ metadata_select <- function(mset,
     
     metadata_supp.ls[[set.c]] <- list(pdata = pdata_supp.df,
                                       fdata = fdata_supp.df)
+ 
     
   }
   
@@ -307,30 +319,29 @@ metadata_select <- function(mset,
   
 }
 
-
 .sample_metadata_select <- function(set.c) {
   
   first.vc <- c("gene",
                 "mouse_nb",
                 "sex")
   
-  if (set.c == "preclinical")
-    add.vc <- c("mouse_id",
-                "genotype",
-                "project")
+  # add.vc <- ""
+  # if (set.c == "preclinical")
+  #   add.vc <- c("mouse_id",
+  #               "genotype",
+  #               "project")
   
   # metabolomics
   
-  if (grepl("metabolomics", set.c))
-    add.vc <- ""
+  # if (grepl("metabolomics", set.c))
     # add.vc <- "initial_name"
   
   # proteomics
   
-  if (grepl("proteomics", set.c))
-    add.vc <- "Sample.name"
+  # if (grepl("proteomics", set.c))
+  #   add.vc <- "Sample.name"
   
-  first.vc <- c(first.vc, add.vc)
+  # first.vc <- c(first.vc, add.vc)
   
   return(first.vc)
   
@@ -352,9 +363,8 @@ metadata_select <- function(mset,
                 "mixomics")
   
   if (set.c == "preclinical")
-    add.vc <- c("initial_names",
-                "category",
-                "full_info")
+    add.vc <- c("measurement",
+                "category")
   
   # metabolomics
   

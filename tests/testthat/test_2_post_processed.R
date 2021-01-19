@@ -29,7 +29,7 @@ testthat::test_that("dimensions", {
                    "metabolomics_plasma_c18acqui_pos|6238|42",
                    "metabolomics_plasma_c18hyper_pos|3900|42",
                    "metabolomics_plasma_hilic_neg|2594|42",
-                   "preclinical|213|42",
+                   "preclinical|231|42",
                    "proteomics_liver|2187|42",
                    "proteomics_plasma|446|36")
   test_dim.mn <- sapply(test_dim.vc, function(x) unlist(strsplit(x, "|", fixed = TRUE))[c(2, 3)])

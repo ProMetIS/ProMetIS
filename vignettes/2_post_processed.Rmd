@@ -52,7 +52,8 @@ preclinic_setname.c <- "preclinical"
 preclinic_raw.df <- read.table(file.path(ProMetIS::processed_dir.c(),
                                          preclinic_setname.c,
                                          "phenomin.tsv"),
-                               check.names = FALSE, comment.char = "",
+                               check.names = FALSE,
+                               #comment.char = "",
                                header = TRUE, quote = "", sep = "\t")
 preclinic_proc_names.vc <- colnames(preclinic_raw.df)
 colnames(preclinic_raw.df) <- make.names(colnames(preclinic_raw.df), unique = TRUE)
@@ -75,13 +76,13 @@ rownames(preclinic_raw.df) <- mice_id.vc
 
 preclinic_pda.df <- preclinic_raw.df
 
-# labeling the 'initial' information (to be kept at the end of the
-# sampleMetadata and variableMetadata tables)
-
-supp.vi <- which(!(colnames(preclinic_pda.df) %in% ProMetIS:::.varLabels_first.ls()[["preclinical"]]))
-stopifnot(length(supp.vi) == 1091)
-colnames(preclinic_pda.df)[supp.vi] <- paste0("supp_",
-                                           colnames(preclinic_pda.df)[supp.vi])
+# # labeling the 'initial' information (to be kept at the end of the
+# # sampleMetadata and variableMetadata tables)
+# 
+# supp.vi <- which(!(colnames(preclinic_pda.df) %in% ProMetIS:::.varLabels_first.ls()[["preclinical"]]))
+# stopifnot(length(supp.vi) == 1091)
+# colnames(preclinic_pda.df)[supp.vi] <- paste0("supp_",
+#                                            colnames(preclinic_pda.df)[supp.vi])
 ```
 
 ## dataMatrix
@@ -89,7 +90,7 @@ colnames(preclinic_pda.df)[supp.vi] <- paste0("supp_",
 ```{r preclinical_dataMatrix}
 # initial dataMatrix (42 * 1091)
 
-variable.vi <-  which(!(colnames(preclinic_raw.df) %in% ProMetIS:::.varLabels_first.ls()[["preclinical"]]))
+variable.vi <-  which(!(colnames(preclinic_raw.df) %in% c(ProMetIS:::.sample_metadata_select("preclinical"), "mouse_id", "genotype", "project"))) 
 stopifnot(length(variable.vi) == 1091)
 preclinic_dat.df <- preclinic_raw.df[, variable.vi]
 dat_proc_names.vc <- preclinic_proc_names.vc[variable.vi]
@@ -129,6 +130,9 @@ dat_proc_names.vc <- dat_proc_names.vc[!discard_feat.vl]
 ## keeping numerics and factors with nlevels > 2
 
 preclinic_class.vc <- sapply(preclinic_dat.df, data.class)
+for (preclinic_char.i in which(preclinic_class.vc == "character"))
+  preclinic_dat.df[, preclinic_char.i] <- factor(preclinic_dat.df[, preclinic_char.i])
+preclinic_class.vc <- sapply(preclinic_dat.df, data.class)
 stopifnot(identical(unique(preclinic_class.vc), c("numeric", "factor")))
 
 ## selecting numerics (678)
@@ -144,33 +148,32 @@ for (j in which(preclinic_class.vc == "factor")) {
     keep_factor2.vl[j] <- TRUE
   }
 }
-stopifnot(sum(keep_factor2.vl) == 1)
+stopifnot(sum(keep_factor2.vl) == 21)
 
 ## aggregating selections (725)
 keep_aggreg.vl <- keep_numeric.vl |
   keep_factor2.vl
-stopifnot(sum(keep_aggreg.vl) == 572)
+stopifnot(sum(keep_aggreg.vl) == 592)
 preclinic_dat.mn <- as.matrix(preclinic_dat.df[, keep_aggreg.vl])
 dat_proc_names.vc <- dat_proc_names.vc[keep_aggreg.vl]
 
 ## removing variables with > 20% NA (including 100% NA in females)
-## or with variance < 1e-5
+## or with variance = 0
 keep_notna_zerovar.vl <- ProMetIS:::.filter_na_zerovar(preclinic_dat.mn,
-                                                       na_thresh.n = 0.2,
-                                                       var_thresh.n = 1e-5)
+                                                       na_thresh.n = 0.2)
 
-stopifnot(sum(keep_notna_zerovar.vl) == 213)
+stopifnot(sum(keep_notna_zerovar.vl) == 233)
 preclinic_dat.mn <- preclinic_dat.mn[, keep_notna_zerovar.vl]
 dat_proc_names.vc <- dat_proc_names.vc[keep_notna_zerovar.vl]
 
-stopifnot(identical(dim(preclinic_dat.mn), as.integer(c(42, 213))))
+stopifnot(identical(dim(preclinic_dat.mn), as.integer(c(42, 233))))
 ```
 
 
 ## variableMetadata
 
 ```{r preclinical_variableMetadata}
-# variableMetadata (238 * 2)
+# variableMetadata (233 * 3)
 category.vc <- sapply(colnames(preclinic_dat.mn),
                       function(name.c)
                         unlist(strsplit(name.c,
@@ -201,30 +204,43 @@ full.vc <- sapply(colnames(preclinic_dat.mn),
                     }
                   })
 preclinic_fda.df <- data.frame(row.names = colnames(preclinic_dat.mn),
-                            initial_names = dat_proc_names.vc,
-                            category = category.vc,
-                            full_info = full.vc,
-                            stringsAsFactors = FALSE)
-stopifnot(identical(dim(preclinic_fda.df), as.integer(c(213, 3))))
+                               measurement = dat_proc_names.vc,
+                               category = category.vc,
+                               stringsAsFactors = FALSE)
+stopifnot(identical(dim(preclinic_fda.df), as.integer(c(233, 2))))
 ```
 
 ## ExpressionSet
 
 ```{r preclinical_ExpressionSet}
 # converting to ExpressionSet
-clinic.eset <- Biobase::ExpressionSet(assayData = t(preclinic_dat.mn),
-                                      phenoData = Biobase::AnnotatedDataFrame(data = preclinic_pda.df),
-                                      featureData = Biobase::AnnotatedDataFrame(data = preclinic_fda.df),
-                                      experimentData = Biobase::MIAME(title = preclinic_setname.c))
-stopifnot(methods::validObject(clinic.eset))
+preclinical.eset <- Biobase::ExpressionSet(assayData = t(preclinic_dat.mn),
+                                           phenoData = Biobase::AnnotatedDataFrame(data = preclinic_pda.df),
+                                           featureData = Biobase::AnnotatedDataFrame(data = preclinic_fda.df),
+                                           experimentData = Biobase::MIAME(title = preclinic_setname.c))
+stopifnot(methods::validObject(preclinical.eset))
 
-print(clinic.eset)
+preclinical.eset <- ProMetIS:::metadata_select(preclinical.eset)[["preclinical"]]
+
+print(preclinical.eset)
+```
+
+## Deleting the Ca outlier measurements
+
+```{r preclinical_outliers}
+preclinical.eset <- preclinical.eset[!grepl("Ca", Biobase::featureNames(preclinical.eset)), ]
 ```
 
 ## Saving (not run)
 
 ```{r preclinical_saving}
-phenomis::writing(clinic.eset,
+# an 'id' extra column has been automatically created in the sampleMetadata by
+# 'MultiDataSet' and must be removed before saving
+pdata.df <- Biobase::pData(preclinical.eset)
+pdata.df[, "id"] <- NULL
+Biobase::pData(preclinical.eset) <- pdata.df
+
+phenomis::writing(preclinical.eset,
                   file.path(gsub(ProMetIS::data_dir.c(),
                                  "../../ProMetIS/inst/extdata",
                                  ProMetIS::post_processed_dir.c()),
