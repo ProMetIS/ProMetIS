@@ -67,6 +67,8 @@ metabo_postprocessing <- function(metabo.mset,
   
   for (set.c in names(metabo.mset)) {
     
+    print(set.c)
+    
     eset <- metabo.mset[[set.c]]
     
     # Imputation (MTH Paris)
@@ -95,7 +97,7 @@ metabo_postprocessing <- function(metabo.mset,
     # Blank filtering
     
     eset <- phenomis::inspecting(eset,
-                                 figure.c = !.discard_pools.l,
+                                 figure.c = ifelse(.discard_pools.l, "none", "interactive"),
                                  report.c = "none")
     
     eset <- eset[which(Biobase::fData(eset)[, "blankMean_over_sampleMean"] <= 0.33), ]
@@ -145,16 +147,16 @@ metabo_postprocessing <- function(metabo.mset,
                                    reference.c = drift_correct.c,
                                    title.c = gsub("metabolomics_", "", set.c),
                                    span.n = 2,
-                                   figure.c = !.discard_pools.l)
+                                   figure.c = ifelse(.discard_pools.l, "none", "interactive"))
     
     # NAs and variances
     
-    eset <- phenomis::filtering(eset, max_na_prop.n = 0)
+    eset <- phenomis::filtering(eset, max_na_prop.n = 0.2)
     
     # pool CV <= 0.3
     
     eset <- phenomis::inspecting(eset, report.c = "none",
-                                 figure.c = !.discard_pools.l)
+                                 figure.c = ifelse(.discard_pools.l, "none", "interactive"))
     
     eset <- eset[which(Biobase::fData(eset)[, "pool_CV"] <= 0.3), ]
     
@@ -172,6 +174,7 @@ metabo_postprocessing <- function(metabo.mset,
     eset <- phenomis::reducing(eset)
     
     eset <- eset[Biobase::fData(eset)[, "redund_is"] < 1, ]
+    
     
     # Updating the eset object
     
@@ -229,25 +232,16 @@ metabo_postprocessing <- function(metabo.mset,
     
     Biobase::sampleNames(eset) <- mice.ls[["id.vc"]]
     
-    # ordering features metadata (supplementary columns will be moved at the end
-    # of the data frame with the ordermeta_mset function)
-    
+    # variable metadata: adding the name of the chromatographic column
+
     fdata.df <- Biobase::fData(eset)
-    
-    fdata.df <- data.frame(chromato = rep(unlist(strsplit(set.c, split = "_"))[3],
-                                          nrow(fdata.df)),
-                           fdata.df,
-                           stringsAsFactors = FALSE)
-    
-    supp.vi <- which(!(colnames(fdata.df) %in% ProMetIS:::.fvarLabels_first.ls()[[set.c]]))
-    colnames(fdata.df)[supp.vi] <- paste0("supp_",
-                                          colnames(fdata.df)[supp.vi])
-    
+
+    fdata.df[, "chromato"] <- rep(unlist(strsplit(set.c, split = "_"))[3],
+                                          nrow(fdata.df))
+
     Biobase::fData(eset) <- fdata.df
-    
+
     stopifnot(methods::validObject(eset))
-    
-    Biobase::featureNames(eset) <- fdata.df[, "namecustom"]
     
     metabo.mset <- MultiDataSet::add_eset(metabo.mset,
                                           eset,

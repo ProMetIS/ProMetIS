@@ -50,10 +50,10 @@ preclinic_setname.c <- "preclinical"
 
 # table from PHENOMIN (47 * 1098)
 preclinic_raw.df <- read.table(file.path(ProMetIS::processed_dir.c(),
-                                      preclinic_setname.c,
-                                      "phenomin.tsv"),
-                            check.names = FALSE, comment.char = "",
-                            header = TRUE, quote = "", sep = "\t")
+                                         preclinic_setname.c,
+                                         "phenomin.tsv"),
+                               check.names = FALSE, comment.char = "",
+                               header = TRUE, quote = "", sep = "\t")
 preclinic_proc_names.vc <- colnames(preclinic_raw.df)
 colnames(preclinic_raw.df) <- make.names(colnames(preclinic_raw.df), unique = TRUE)
 
@@ -565,10 +565,8 @@ The workflow consists of the following steps:
 |corr, dRT, dmz      |         X         |         X         |         X         |         X         |         X         |         X         |
 
 ```{r metabolomics_dataMatrix, message=FALSE, warning=FALSE}
-
 metabo.mset <- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
                                                 drift_correct.c = "sample")
-
 ```
 
 ## Formatting and ordering sample names
@@ -587,7 +585,8 @@ metabo.mset <- phenomis::transforming(metabo.mset, report.c = "none")
 ## Re-ordering metadata ('supp_' columns at the end)
 
 ```{r metabo_reordering}
-metabo.mset <- ProMetIS::order_mset(metabo.mset)
+metabo.mset <- ProMetIS:::metadata_select(metabo.mset,
+                                          step.c = "2_post_processed")
 ```
 
 
@@ -613,3 +612,4 @@ for (set.c in ProMetIS::metabo_sets.vc()) {
   
 }
 ```
+

@@ -231,44 +231,57 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
 }
 
 
-#' Moving the selected columns at the beginning of the sampleMetadata and variableMetadata.
-#' @export
-order_mset <- function(mset) {
+metadata_select <- function(mset,
+                            step.c = "2_post_processed") {
   
   mset_names.vc <- names(mset)
+  
+  metadata_supp_file.c <- paste0("../inst/extdata/", step.c, "/metadata_supp.rdata")
+  
+  if(file.exists(metadata_supp_file.c)) {
+    load(metadata_supp_file.c)
+  } else {
+    metadata_supp.ls <- vector(mode = "list", length = length(ProMetIS::sets.vc()))
+    names(metadata_supp.ls) <- ProMetIS::sets.vc()
+  }
   
   for (set.c in mset_names.vc) {
     
     eset <- mset[[set.c]]
-
-    # samples
     
-    pvar_first.vc <- ProMetIS:::.varLabels_first.ls()[[set.c]]
+    # sample metadata
     
     pdata.df <- Biobase::pData(eset)
     
-    pdata_first.vc <- pvar_first.vc[pvar_first.vc %in% colnames(pdata.df)]
-    pdata_supp.vc <- grep("^supp_", colnames(pdata.df), value = TRUE)
-    pdata_remaining.vc <- setdiff(colnames(pdata.df), union(pdata_first.vc, pdata_supp.vc))
+    samplemeta.vc <- .sample_metadata_select(set.c)
     
-    pdata.df <- pdata.df[, c(pdata_first.vc, pdata_remaining.vc, pdata_supp.vc)]
+    samplemeta.vc <- samplemeta.vc[samplemeta.vc %in% colnames(pdata.df)]
     
-    Biobase::pData(eset) <- pdata.df 
+    samplemeta_supp.vc <- setdiff(colnames(pdata.df), samplemeta.vc)
     
-    # features
+    if(length(samplemeta_supp.vc)) {
+      pdata_supp.df <- pdata.df[, samplemeta_supp.vc, drop = FALSE]
+    } else
+      pdata_supp.df <- data.frame()
     
-    fvar_first.vc <- ProMetIS:::.fvarLabels_first.ls()[[set.c]]
+    Biobase::pData(eset) <- pdata.df[, samplemeta.vc]
+    
+    # variable metadata
     
     fdata.df <- Biobase::fData(eset)
     
-    fdata_first.vc <- fvar_first.vc[fvar_first.vc %in% colnames(fdata.df)]
-    fdata_imputed.vc <- grep("^imputed_", colnames(fdata.df), value = TRUE)
-    fdata_supp.vc <- grep("^supp_", colnames(fdata.df), value = TRUE)
-    fdata_remaining.vc <- setdiff(colnames(fdata.df), c(fdata_first.vc, fdata_imputed.vc, fdata_supp.vc))
+    variablemeta.vc <- .variable_metadata_select(set.c)
     
-    fdata.df <- fdata.df[, c(fdata_first.vc, fdata_remaining.vc, fdata_imputed.vc, fdata_supp.vc)]
+    variablemeta.vc <- variablemeta.vc[variablemeta.vc %in% colnames(fdata.df)]
     
-    Biobase::fData(eset) <- fdata.df
+    variablemeta_supp.vc <- setdiff(colnames(fdata.df), variablemeta.vc)
+    
+    if(length(variablemeta_supp.vc)) {
+      fdata_supp.df <- fdata.df[, variablemeta_supp.vc, drop = FALSE]
+    } else
+      fdata_supp.df <- data.frame()
+    
+    Biobase::fData(eset) <- fdata.df[, variablemeta.vc]
     
     stopifnot(methods::validObject(eset))
     
@@ -279,126 +292,124 @@ order_mset <- function(mset) {
                                    overwrite = TRUE,
                                    warnings = FALSE)
     
+    metadata_supp.ls[[set.c]] <- list(pdata = pdata_supp.df,
+                                      fdata = fdata_supp.df)
+    
   }
   
   mset <- mset[, mset_names.vc]
   
-  mset
+  save(metadata_supp.ls, file = metadata_supp_file.c)
+  
+  message("Supplementary metadata written in:\n", metadata_supp_file.c)
+  
+  return(invisible(mset))
   
 }
 
-.varLabels_first.ls <- function() {
-  sapply(ProMetIS::sets.vc(),
-         function(set.c) {
-           
-           first.vc <- c("gene",
-                         "mouse_nb",
-                         "sex")
-           
-           if (set.c == "preclinical")
-             add.vc <- c("mouse_id",
-                         "genotype",
-                         "project")
-           
-           # metabolomics
-           
-           if (grepl("metabolomics", set.c))
-             add.vc <- "initial_name"
-           
-           # proteomics
-           
-           if (grepl("proteomics", set.c))
-             add.vc <- "Sample.name"
-           
-           first.vc <- c(first.vc, add.vc)
-           
-           return(first.vc)
-           
-         })
+
+.sample_metadata_select <- function(set.c) {
+  
+  first.vc <- c("gene",
+                "mouse_nb",
+                "sex")
+  
+  if (set.c == "preclinical")
+    add.vc <- c("mouse_id",
+                "genotype",
+                "project")
+  
+  # metabolomics
+  
+  if (grepl("metabolomics", set.c))
+    add.vc <- ""
+    # add.vc <- "initial_name"
+  
+  # proteomics
+  
+  if (grepl("proteomics", set.c))
+    add.vc <- "Sample.name"
+  
+  first.vc <- c(first.vc, add.vc)
+  
+  return(first.vc)
+  
 }
 
-.fvarLabels_first.ls <- function() {
-  sapply(ProMetIS::sets.vc(),
-         function(set.c) {
-           first.vc <- c("gene",
-                         "set",
-                         paste0("WT.KO_", c("fold",
-                                            "BH",
-                                            "signif")),
-                         paste0("M.F_", c("fold",
-                                          "BH",
-                                          "signif")),
-                         "WT.KO_fold",
-                         "oplsda_vip",
-                         "biosigner",
-                         "mixomics")
-           
-           if (set.c == "preclinical")
-             add.vc <- c("initial_names",
-                         "category",
-                         "full_info")
-           
-           # metabolomics
-           
-           if (grepl("metabolomics", set.c)) {
-             
-             add.vc <- c("chromato",
-                         "namecustom",
-                         "mz",
-                         "rt",
-                         "isotopes",
-                         "adduct",
-                         "pcgroup",
-                         "redund_group",
-                         "redund_iso_add_frag")
-             
-             if (grepl("(hyper|hilic)", set.c)) {
-               
-               add.vc <- c(add.vc,
-                           c("spi_formula",
-                             "spi_monoisotopic",
-                             "spi_name",
-                             "spi_KEGGpathwaysfamily",
-                             "spi_KEGGpathways",
-                             "spi_subpathways",
-                             "spi_annot",
-                             "inchi",
-                             "inchikey",
-                             "pubchem",
-                             "chebi",
-                             "hmdb",
-                             "kegg"))
-               
-             } else if (grepl("acqui", set.c)) {
-               
-               add.vc <- c(add.vc,
-                           
-                           "BiH_base_POS_QTof_Plasma.txt_.MzDelta_Query.Bank.0.005Da..MzBank.RtQuery.RtDelta_Query.Bank.0.2min...RtBank.name.M.Formule.M.H..M.H...th.Intensite...Tr.Masse.Exp.Delta.ppm.",
-                           "BiH_Pool_Qtof_Pos_plasma.txt_.MzDelta_Query.Bank.0.005Da..MzBank.RtQuery.RtDelta_Query.Bank.0.2min...RtBank.G.N.compound.composition.Formule.M.H...M.H....Th...TR.Masse.exo.delta.ppm.",
-                           "BiH_DB_Lipids_POS.MzDelta_Query.Bank.0.005Da..MzBank.m.z..M.H...Formule.Brute..M..Annotation..Lipid.class.and.subclass.RT.min..",
-                           
-                           
-                           "BiH_Pool_Compounds_QToff_CF_Neg.txt_.MzDelta_Query.Bank.0.005Da..MzBank.RtQuery.RtDelta_Query.Bank.0.2min...RtBank.G.N.compound.composition.exact.mass...M.H......M.H....Masse.Neg.Delta.ppm.TR.",
-                           "BiH_AcideAmine_Frag_QTof_CF_Neg.txt_.MzDelta_Query.Bank.0.005Da..MzBank.RtQuery.RtDelta_Query.Bank.0.2min...RtBank.names.M.composition.M.H.Masse..M.H...Th..Masse.exp.Tr.Delta.Neg.ppm.")
-               
-             }
-           }
-           
-           # proteomics
-           
-           if (grepl("proteomics", set.c)) {
-             
-             add.vc <- c("accession",
-                         "description",
-                         "uniprot_id")
-             
-           }
-           
-           first.vc <- c(first.vc, add.vc)
-           
-           return(first.vc)
-           
-         })
+.variable_metadata_select <- function(set.c) {
+  
+  first.vc <- c("gene",
+                "set",
+                paste0("WT.KO_", c("fold",
+                                   "BH",
+                                   "signif")),
+                paste0("M.F_", c("fold",
+                                 "BH",
+                                 "signif")),
+                "WT.KO_fold",
+                "oplsda_vip",
+                "biosigner",
+                "mixomics")
+  
+  if (set.c == "preclinical")
+    add.vc <- c("initial_names",
+                "category",
+                "full_info")
+  
+  # metabolomics
+  
+  if (grepl("metabolomics", set.c)) {
+    
+    add.vc <- c("chromato",
+                "MT",
+                "mz",
+                "rt",
+                "isotopes",
+                "adduct",
+                "pcgroup",
+                "redund_group",
+                "redund_iso_add_frag",
+                "name")
+    
+    if (grepl("(hyper|hilic)", set.c)) {
+      
+      add.vc <- c(add.vc,
+                  c("formula",
+                    "monoisotopic_mass",
+                    "kegg_id",
+                    "kegg_pathway_family",
+                    "kegg_pathways",
+                    "kegg_subpathways",
+                    "chebi_id",
+                    "hmdb_id",
+                    "pubchem_id",
+                    "inchikey",
+                    "inchi"))
+      
+    } else if (grepl("acqui", set.c)) {
+      
+      add.vc <- c(add.vc,
+                  "chebi_id",
+                  "annot_level",
+                  "annot_confidence")
+
+    }
+  }
+  
+  # proteomics
+  
+  if (grepl("proteomics", set.c)) {
+    
+    add.vc <- c("accession",
+                "description",
+                "uniprot_id")
+    
+  }
+  
+  first.vc <- c(first.vc, add.vc)
+  
+  return(first.vc)
+  
 }
 
 
