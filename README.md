@@ -1,6 +1,5 @@
 # The **ProMetIS** R package: Multi-omics phenotyping of the LAT and MX2 knockout mice
 
-[![Travis build status](https://travis-ci.org/ProMetIS/ProMetIS.svg?branch=master)](https://travis-ci.org/ProMetIS/ProMetIS)
 
 ## Description
 

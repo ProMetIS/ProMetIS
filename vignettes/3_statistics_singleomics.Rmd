@@ -362,8 +362,27 @@ for (set.c in names(latmx2.mset)) {
 
 # Re-ordering metadata
 
+```{r}
+load("../inst/extdata/3_statistics_singleomics/metadata_supp.rdata")
+for (set.c in names(latmx2.mset)) {
+  eset <- latmx2.mset[[set.c]]
+  Biobase::fData(eset) <- cbind.data.frame(Biobase::fData(eset),
+                                           metadata_supp.ls[[set.c]][["fdata"]],
+                                           stringsAsFactors = FALSE)
+  latmx2.mset <- MultiDataSet::add_eset(latmx2.mset,
+                                          eset,
+                                          dataset.type = set.c,
+                                          GRanges = NA,
+                                          overwrite = TRUE,
+                                          warnings = FALSE)
+}
+```
+
+
 ```{r reordering}
-latmx2.mset <- ProMetIS::order_mset(latmx2.mset)
+# latmx2.mset <- ProMetIS::order_mset(latmx2.mset)
+latmx2.mset <- ProMetIS:::metadata_select(latmx2.mset, step.c = "3_statistics_singleomics")
+
 ```
 
 # Saving (not run)

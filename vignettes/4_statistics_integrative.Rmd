@@ -59,9 +59,9 @@ for (gene.c in ProMetIS::genes.vc()) {
     # tissue.c <- "plasma"
     
     mset <- ProMetIS::subsetting(latmx2.mset,
-                               genes.vc = wtgene.vc,
-                               tissues.vc = tissue.c,
-                               common_samples.l = TRUE)
+                                 genes.vc = wtgene.vc,
+                                 tissues.vc = tissue.c,
+                                 common_samples.l = TRUE)
     
     # mset <- ProMetIA::abbrev_mset(mset)
     
@@ -290,7 +290,8 @@ latmx2.mset <- latmx2.mset[, ProMetIS::sets.vc()]
 # Re-ordering metadata
 
 ```{r}
-latmx2.mset <- ProMetIS::order_mset(latmx2.mset)
+#latmx2.mset <- ProMetIS::order_mset(latmx2.mset)
+latmx2.mset <- ProMetIS:::metadata_select(latmx2.mset, step.c = "4_statistics_integrative")
 ```
 
 

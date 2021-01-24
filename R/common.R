@@ -148,8 +148,8 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
             
             x <- x[feat_sel.vl, ]
             
-            if (sum(!feat_sel.vl))
-              message("Nb of discard feat. in '", set.c, "': ",
+            # if (sum(!feat_sel.vl))
+              message("Nb of discard. feat. in '", set.c, "': ",
                       paste(paste0(names(filter.vi), ": ", filter.vi), collapse = ", "))
             
             invisible(x)
@@ -183,25 +183,69 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
   
 }
 
+.imputation_info <- function(eset,
+                             set.c) {
+  
+  prot_pda.df <- Biobase::pData(eset)
+  prot_fda.df <- Biobase::fData(eset)
+  
+  load(system.file("extdata/2_post_processed/metadata_supp.rdata", package = "ProMetIS"))
+  
+  supp_pda.df <- metadata_supp.ls[[set.c]][["pdata"]]
+  supp_fda.df <- metadata_supp.ls[[set.c]][["fdata"]]
+  
+  stopifnot(all(rownames(prot_pda.df) %in% rownames(supp_pda.df)))
+  stopifnot(all(rownames(prot_fda.df) %in% rownames(supp_fda.df)))
+  
+  prot_pda.df <- cbind.data.frame(prot_pda.df, supp_pda.df[rownames(prot_pda.df), , drop = FALSE])
+  prot_fda.df <- cbind.data.frame(prot_fda.df, supp_fda.df[rownames(prot_fda.df), , drop = FALSE])
+  
+  
+  ## checking that the sample names are ordered by increasing ID
+  prot_samp.vi <- as.integer(substr(rownames(prot_pda.df), 2, 4))
+  stopifnot(identical(prot_samp.vi, sort(prot_samp.vi)))
+  
+  ## getting imputation info
+  value_origin.vl <- vapply(colnames(prot_fda.df), function(colname.c) {
+    colname_split.vc <- unlist(strsplit(colname.c, split = "_"))
+    grepl("^OriginOfValueabundance", colname.c) &
+      colname_split.vc[length(colname_split.vc)] %in% rownames(prot_pda.df)
+  }, FUN.VALUE = logical(1))
+  value_origin.df <- prot_fda.df[, value_origin.vl]
+  colnames(value_origin.df) <- gsub("_run90methode30K",
+                                    "",
+                                    gsub("_mgf", "",
+                                         gsub("OriginOfValueabundance_", "",
+                                              colnames(value_origin.df))))
+  
+  ## re-ordering imputation info to match sample names
+  value_origin_samp.vc <- vapply(colnames(value_origin.df), function(colname.c) {
+    colname_split.vc <- unlist(strsplit(colname.c, split = "_"))
+    colname_split.vc[length(colname_split.vc)]}, FUN.VALUE = character(1))
+  temp <- value_origin_samp.vc
+  value_origin_samp.vc <- names(value_origin_samp.vc)
+  names(value_origin_samp.vc) <- temp
+  value_origin.df <- value_origin.df[, value_origin_samp.vc[rownames(prot_pda.df)]]
+  
+  stopifnot(identical(names(value_origin_samp.vc[rownames(prot_pda.df)]), Biobase::sampleNames(eset)))
+  colnames(value_origin.df) <- Biobase::sampleNames(eset)
+  
+  imputed.mi <- apply(value_origin.df, 2, DAPAR_is.MV)
+  mode(imputed.mi) <- "integer"
+  
+  stopifnot(!any(is.na(c(imputed.mi))))
+  
+  return(imputed.mi)
+  
+}
 
 .filter_overimputed <- function(eset,
                                 set.c,
                                 genes.vc,
                                 sex.vc,
                                 imputed_thresh.n) {
-  
-  # fdata.df <- Biobase::fData(eset)
-  # 
-  # imputed.vc <- paste0("imputed_", Biobase::sampleNames(eset))
-  # 
-  # stopifnot(all(imputed.vc %in% colnames(fdata.df)))
-  # 
-  # imputed.mi <- fdata.df[, imputed.vc]
-  
-  
-  load(system.file("extdata/2_post_processed/proteomics_imputed.rdata", package = "ProMetIS"))
-  
-  imputed.mi <- proteomics_imputed.ls[[set.c]]
+
+  imputed.mi <- .imputation_info(eset = eset, set.c = set.c)
   
   stopifnot(identical(Biobase::sampleNames(eset), colnames(imputed.mi)))
   
@@ -241,7 +285,7 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
 
 
 metadata_select <- function(mset,
-                            step.c = "2_post_processed") {
+                            step.c) { # e.g. step.c = "2_post_processed"
   
   if(is.null(names(mset))) { # preclinical expression set
     preclinical.eset <- mset
@@ -290,7 +334,7 @@ metadata_select <- function(mset,
     
     fdata.df <- Biobase::fData(eset)
     
-    variablemeta.vc <- .variable_metadata_select(set.c)
+    variablemeta.vc <- .variable_metadata_select(fdata.df = fdata.df, set.c = set.c)
     
     variablemeta.vc <- variablemeta.vc[variablemeta.vc %in% colnames(fdata.df)]
     
@@ -356,78 +400,88 @@ metadata_select <- function(mset,
   
 }
 
-.variable_metadata_select <- function(set.c) {
-  
-  first.vc <- c("gene",
-                "set",
-                paste0("WT.KO_", c("fold",
-                                   "BH",
-                                   "signif")),
-                paste0("M.F_", c("fold",
-                                 "BH",
-                                 "signif")),
-                "WT.KO_fold",
-                "oplsda_vip",
-                "biosigner",
-                "mixomics")
+.variable_metadata_select <- function(fdata.df, set.c) {
+
+  ## post-processing
   
   if (set.c == "preclinical")
-    add.vc <- c("measurement",
-                "category")
-  
-  # metabolomics
+    varmeta.vc <- c("measurement",
+                     "category")
   
   if (grepl("metabolomics", set.c)) {
     
-    add.vc <- c("chromato",
-                "MT",
-                "mz",
-                "rt",
-                "isotopes",
-                "adduct",
-                "pcgroup",
-                "redund_group",
-                "redund_iso_add_frag",
-                "name")
+    varmeta.vc <- c("chromato",
+                     "MT",
+                     "mz",
+                     "rt",
+                     "isotopes",
+                     "adduct",
+                     "pcgroup",
+                     "redund_group",
+                     "redund_iso_add_frag",
+                     "name")
     
     if (grepl("(hyper|hilic)", set.c)) {
       
-      add.vc <- c(add.vc,
-                  c("formula",
-                    "monoisotopic_mass",
-                    "kegg_id",
-                    "kegg_pathway_family",
-                    "kegg_pathways",
-                    "kegg_subpathways",
-                    "chebi_id",
-                    "hmdb_id",
-                    "pubchem_id",
-                    "inchikey",
-                    "inchi"))
+      varmeta.vc <- c(varmeta.vc,
+                       c("formula",
+                         "monoisotopic_mass",
+                         "kegg_id",
+                         "kegg_pathway_family",
+                         "kegg_pathways",
+                         "kegg_subpathways",
+                         "chebi_id",
+                         "hmdb_id",
+                         "pubchem_id",
+                         "inchikey",
+                         "inchi"))
       
-    } else if (grepl("acqui", set.c)) {
-      
-      add.vc <- c(add.vc,
-                  "chebi_id",
-                  "annot_level",
-                  "annot_confidence")
+    } else if (grepl("acqui", set.c))
+      varmeta.vc <- c(varmeta.vc,
+                       "chebi_id",
+                       "annot_level",
+                       "annot_confidence")
+  }
+  
+  if (grepl("proteomics", set.c))
+    varmeta.vc <- c("accession",
+                     "description",
+                     "uniprot_id")
 
-    }
-  }
   
-  # proteomics
+  ## hypothesis testing
   
-  if (grepl("proteomics", set.c)) {
+  limma_col.vc <- grep("limma", colnames(fdata.df), value = TRUE)
+  if (length(limma_col.vc))
+    varmeta.vc <- c(varmeta.vc,
+                    limma_col.vc)
     
-    add.vc <- c("accession",
-                "description",
-                "uniprot_id")
+  
+  # VIP
+  
+  vip_col.vc <- grep("OPLSDA_VIP-pred", colnames(fdata.df), value = TRUE)
+  if (length(vip_col.vc))
+    varmeta.vc <- c(varmeta.vc,
+                    vip_col.vc)
     
-  }
+    # Feature selection
+    
+  biosign_col.vc <- grep("biosign_", colnames(fdata.df), value = TRUE)
+  if (length(biosign_col.vc))
+    varmeta.vc <- c(varmeta.vc,
+                    biosign_col.vc)
+    
+    
+    # mixOmics
+    
+    mixomics_col.vc <- grep("mixomics_", colnames(fdata.df), value = TRUE)
+    if (length(mixomics_col.vc))
+      varmeta.vc <- c(varmeta.vc,
+                      mixomics_col.vc)
+    
+ 
   
-  first.vc <- c(first.vc, add.vc)
-  
-  return(first.vc)
+  return(varmeta.vc)
   
 }
 

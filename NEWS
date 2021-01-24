@@ -1,3 +1,10 @@
+CHANGES IN VERSION 0.3.22
+------------------------------
+
+NEW FEATURE
+
+    o statistics_singleomics and _integrative: updates with the new post-processed datasets
+
 CHANGES IN VERSION 0.3.20
 ------------------------------
 
