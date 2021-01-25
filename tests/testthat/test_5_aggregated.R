@@ -20,22 +20,22 @@ testthat::test_that("dimensions", {
   #             apply(aggregated_dim.ls[[gene.c]], 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_dim.ls <- list(LAT = c("preclinical|181|28",
-                              "metabolomics_liver_c18hyper_pos|6209|28",
-                              "metabolomics_liver_hilic_neg|2566|28",
+  test_dim.ls <- list(LAT = c("metabolomics_liver_c18hyper_pos|4880|28",
+                              "metabolomics_liver_hilic_neg|2583|28",
                               "metabolomics_plasma_c18acqui_neg|1612|28",
-                              "metabolomics_plasma_c18acqui_pos|6195|28",
-                              "metabolomics_plasma_c18hyper_pos|5520|28",
-                              "metabolomics_plasma_hilic_neg|2521|28",
+                              "metabolomics_plasma_c18acqui_pos|6238|28",
+                              "metabolomics_plasma_c18hyper_pos|3900|28",
+                              "metabolomics_plasma_hilic_neg|2594|28",
+                              "preclinical|188|28",
                               "proteomics_liver|2098|28",
                               "proteomics_plasma|419|24"),
-                      MX2 = c("preclinical|212|29",
-                              "metabolomics_liver_c18hyper_pos|6209|29",
-                              "metabolomics_liver_hilic_neg|2566|29",
+                      MX2 = c("metabolomics_liver_c18hyper_pos|4880|29",
+                              "metabolomics_liver_hilic_neg|2583|29",
                               "metabolomics_plasma_c18acqui_neg|1612|29",
-                              "metabolomics_plasma_c18acqui_pos|6195|29",
-                              "metabolomics_plasma_c18hyper_pos|5520|29",
-                              "metabolomics_plasma_hilic_neg|2521|29",
+                              "metabolomics_plasma_c18acqui_pos|6238|29",
+                              "metabolomics_plasma_c18hyper_pos|3900|29",
+                              "metabolomics_plasma_hilic_neg|2594|29",
+                              "preclinical|230|29",
                               "proteomics_liver|2090|29",
                               "proteomics_plasma|422|25"))
   test_dim.ls <- lapply(test_dim.ls,
@@ -58,61 +58,61 @@ testthat::test_that("dimensions", {
 
 testthat::test_that("significant", {
   
-  aggregated_signif.ls <- lapply(names(aggregated.ls),
+  aggregated_signif.mn <- sapply(names(aggregated.ls),
                                  function(gene.c) {
                                    gene.mset <- aggregated.ls[[gene.c]]
-                                   t(sapply(names(gene.mset),
+                                   sapply(names(gene.mset),
                                             function(set.c) {
                                               set_fda.df <- Biobase::fData(gene.mset[[set.c]])
-                                              if (gene.c == "LAT" && set.c == "proteomics_liver") {
-                                                return(apply(set_fda.df[, c("limmaM_WT.LAT_signif",
-                                                                            "limmaF_WT.LAT_signif")],
-                                                             2,
-                                                             function(y) sum(y, na.rm = TRUE)))
-                                              } else {
-                                                return(c(sum(set_fda.df[, paste0("limma2ways_WT.", gene.c, "_signif")],
-                                                             na.rm = TRUE),
-                                                         NA))
-                                              }
-                                            }))
+                                              sum(set_fda.df[, "WT.KO_signif"], na.rm = TRUE)
+                                              # if (gene.c == "LAT" && set.c == "proteomics_liver") {
+                                              #   return(apply(set_fda.df[, c("limmaM_WT.LAT_signif",
+                                              #                               "limmaF_WT.LAT_signif")],
+                                              #                2,
+                                              #                function(y) sum(y, na.rm = TRUE)))
+                                              # } else {
+                                              #   return(c(sum(set_fda.df[, paste0("WT.", gene.c, "_signif")],
+                                              #                na.rm = TRUE),
+                                              #            NA))
+                                              # }
+                                            })
                                  })
-  names(aggregated_signif.ls) <- names(aggregated.ls)
   
   # gene.c <- "MX2"
   # paste(paste(rownames(aggregated_signif.ls[[gene.c]]),
   #             apply(aggregated_signif.ls[[gene.c]], 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_signif.ls <- list(LAT = c("preclinical|0|NA",
-                                 "metabolomics_liver_c18hyper_pos|2133|NA",
-                                 "metabolomics_liver_hilic_neg|760|NA",
-                                 "metabolomics_plasma_c18acqui_neg|3|NA",
-                                 "metabolomics_plasma_c18acqui_pos|8|NA",
-                                 "metabolomics_plasma_c18hyper_pos|3|NA",
-                                 "metabolomics_plasma_hilic_neg|648|NA",
-                                 "proteomics_liver|1|258",
-                                 "proteomics_plasma|7|NA"),
-                         MX2 = c("preclinical|1|NA",
-                                 "metabolomics_liver_c18hyper_pos|91|NA",
-                                 "metabolomics_liver_hilic_neg|24|NA",
-                                 "metabolomics_plasma_c18acqui_neg|1|NA",
-                                 "metabolomics_plasma_c18acqui_pos|115|NA",
-                                 "metabolomics_plasma_c18hyper_pos|103|NA",
-                                 "metabolomics_plasma_hilic_neg|54|NA",
-                                 "proteomics_liver|263|NA",
-                                 "proteomics_plasma|19|NA"))
-  test_signif.ls <- lapply(test_signif.ls,
+  test_signif.ls <- list(LAT = c("metabolomics_liver_c18hyper_pos|1649",
+                                 "metabolomics_liver_hilic_neg|784",
+                                 "metabolomics_plasma_c18acqui_neg|3",
+                                 "metabolomics_plasma_c18acqui_pos|8",
+                                 "metabolomics_plasma_c18hyper_pos|2",
+                                 "metabolomics_plasma_hilic_neg|642",
+                                 "preclinical|0",
+                                 "proteomics_liver|257",
+                                 "proteomics_plasma|7"),
+                         MX2 = c("metabolomics_liver_c18hyper_pos|54",
+                                 "metabolomics_liver_hilic_neg|24",
+                                 "metabolomics_plasma_c18acqui_neg|1",
+                                 "metabolomics_plasma_c18acqui_pos|115",
+                                 "metabolomics_plasma_c18hyper_pos|97",
+                                 "metabolomics_plasma_hilic_neg|58",
+                                 "preclinical|1",
+                                 "proteomics_liver|263",
+                                 "proteomics_plasma|19"))
+  test_signif.mn <- sapply(test_signif.ls,
                            function(test_signif.vc) {
-                             test_signif.mn <- sapply(test_signif.vc, function(x) unlist(strsplit(x, "|", fixed = TRUE))[2:3])
-                             suppressWarnings(mode(test_signif.mn) <- "integer")
-                             colnames(test_signif.mn) <- sapply(test_signif.vc,
-                                                                function(x) unlist(strsplit(x, "|", fixed = TRUE))[1],
-                                                                USE.NAMES = FALSE)
-                             t(test_signif.mn)
+                             test_signif.vn <- sapply(test_signif.vc, function(x) unlist(strsplit(x, "|", fixed = TRUE))[2])
+                             mode(test_signif.vn) <- "integer"
+                             names(test_signif.vn) <- sapply(test_signif.vc,
+                                                             function(x) unlist(strsplit(x, "|", fixed = TRUE))[1],
+                                                             USE.NAMES = FALSE)
+                             test_signif.vn
                            })
 
-  testthat::expect_identical(aggregated_signif.ls,
-                             test_signif.ls)
+  testthat::expect_identical(aggregated_signif.mn,
+                             test_signif.mn)
   
 })
 

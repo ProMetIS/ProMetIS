@@ -41,3 +41,4 @@ testthat::test_that("dimensions", {
                              test_dim.mn)
   
 })
+

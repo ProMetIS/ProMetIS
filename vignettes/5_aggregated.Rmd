@@ -114,6 +114,8 @@ for (gene.c in ProMetIS::genes.vc()) {
                                     "_",
                                     rep(c("fold", "BH", "signif"), 2))
     
+    fdata.df <- fdata.df[, !grepl("limma", colnames(fdata.df))]
+    
     # VIP
     
     vip.i <- grep("OPLSDA_VIP-pred", colnames(fdata.df))
@@ -122,6 +124,8 @@ for (gene.c in ProMetIS::genes.vc()) {
       vip.vn <- fdata.df[, vip.i]
     } else
       vip.vn <- character(nrow(fdata.df))
+    
+    fdata.df <- fdata.df[, !grepl("OPLSDA_VIP-pred", colnames(fdata.df))]
     
     # Feature selection
     
@@ -144,6 +148,8 @@ for (gene.c in ProMetIS::genes.vc()) {
     } else
       biosign.vc <- character(nrow(fdata.df))
     
+    fdata.df <- fdata.df[, !grepl("biosign_", colnames(fdata.df))]
+    
     # mixOmics
 
     mixomics.i <- grep("mixomics_", colnames(fdata.df))
@@ -155,11 +161,14 @@ for (gene.c in ProMetIS::genes.vc()) {
     } else
       mixomics.vn <- numeric(nrow(fdata.df))
     
+    fdata.df <- fdata.df[, !grepl("mixomics_", colnames(fdata.df))]
+    
     # Aggregating
     
-    fdata.df <- cbind.data.frame(name = rownames(fdata.df),
-                                 set = rep(set.c, nrow(fdata.df)),
+    fdata.df <- cbind.data.frame(set = rep(set.c, nrow(fdata.df)),
                                  gene = rep(gene.c, nrow(fdata.df)),
+                                 
+                                 fdata.df,
                                  
                                  hypotest.df,
                                  
@@ -167,9 +176,7 @@ for (gene.c in ProMetIS::genes.vc()) {
                                  
                                  biosigner = biosign.vc,
                                  
-                                 mixomics = mixomics.vn,
-                                 
-                                 fdata.df)
+                                 mixomics = mixomics.vn)
     
     fdata.df <- fdata.df[order(gene_fdr.vn,
                                -abs(gene_dif.vn)), ]
@@ -190,7 +197,7 @@ for (gene.c in ProMetIS::genes.vc()) {
   }
   
   # re-ordering meta-data
-  gene.mset <- ProMetIS::order_mset(gene.mset)
+  # gene.mset <- ProMetIS::order_mset(gene.mset)
   
   # saving
   phenomis::writing(gene.mset,
@@ -263,24 +270,25 @@ for (gene.c in ProMetIS::genes.vc()) {
                            return("")
                        })
   
-  labels.vc <- paste0(Biobase::featureNames(gene.eset),
-                    "\nFDR = ", signif(fdr.vn, 2),
-                    ", FC = ", signif(fc.vn, 2),
-                    sex_fdr.vc)
+  if (grepl("metabo", set.c)) {
+    met_annot.vl <- !(Biobase::fData(gene.eset)[, "name"] %in% c("", "Unknown"))
+    stopifnot(!any(is.na(met_annot.vl)))
+  } else
+    met_annot.vl <- rep(FALSE, Biobase::dims(gene.eset)["Features", ])
+    
+  labels.vc <- character(Biobase::dims(gene.eset)["Features", ])
+  labels.vc[met_annot.vl] <- Biobase::fData(gene.eset)[met_annot.vl, "name"]
+  labels.vc[!met_annot.vl] <- Biobase::featureNames(gene.eset)[!met_annot.vl]
   
-  # fig_prefix.c <-
-  
-  # print(getwd())
+  labels.vc <- paste0(labels.vc,
+                      "\nFDR = ", signif(fdr.vn, 2),
+                      ", FC = ", signif(fc.vn, 2),
+                      sex_fdr.vc)
   
   fig_prefix.c <- file.path(getwd(),
                             "figures/aggregated",
                             paste0(gene.c, "_", set.c, "_"))
-  
-  # fig_prefix.c <- file.path(gsub(ProMetIS::data_dir.c(),
-  #                                file.path(dirname(getwd()), "vignettes", "figures", "aggregated"),
-  #                                ProMetIS::aggregated_dir.c(gene.c = gene.c))
 
-  
   # volcano plot
   
   for (fig_type.c in c("plotly", "html", "pdf")) {
@@ -291,15 +299,22 @@ for (gene.c in ProMetIS::genes.vc()) {
                        pdf = paste0(fig_prefix.c, "volcano.pdf"))
     
     if (fig_type.c == "pdf") {
-      feat_show.vl <- fdr.vn <= 0.05
-      fig_labels.vc <- Biobase::featureNames(gene.eset)
-      if (sum(feat_show.vl, na.rm = TRUE) <= feat_maxview.i) {
-        fig_labels.vc[!feat_show.vl] <- ""
+      if (grepl("metabo", set.c)) {
+        fig_labels.vc <- labels.vc
+        fig_labels.vc[!met_annot.vl] <- ""
+        fig_labels.vc[met_annot.vl] <- Biobase::fData(gene.eset)[met_annot.vl, "name"]
+        fig_labels.vc[which(fdr.vn > 0.05)] <- ""
       } else {
-        feat_fdr.vn <- fdr.vn
-        names(feat_fdr.vn) <- fig_labels.vc
-        feat_ord.vn <- feat_fdr.vn[order(feat_fdr.vn)]
-        fig_labels.vc[!(fig_labels.vc %in% names(feat_ord.vn)[1:feat_maxview.i])] <- ""
+        feat_show.vl <- fdr.vn <= 0.05
+        fig_labels.vc <- Biobase::featureNames(gene.eset)
+        if (sum(feat_show.vl, na.rm = TRUE) <= feat_maxview.i) {
+          fig_labels.vc[!feat_show.vl] <- ""
+        } else {
+          feat_fdr.vn <- fdr.vn
+          names(feat_fdr.vn) <- fig_labels.vc
+          feat_ord.vn <- feat_fdr.vn[order(feat_fdr.vn)]
+          fig_labels.vc[!(fig_labels.vc %in% names(feat_ord.vn)[1:feat_maxview.i])] <- ""
+        }
       }
     } else
       fig_labels.vc <- labels.vc

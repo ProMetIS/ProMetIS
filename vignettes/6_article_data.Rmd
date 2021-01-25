@@ -368,7 +368,7 @@ prot_qc_plot <- gridExtra::grid.arrange(irt_liver.gg,
                                         heights = c(3, 3))
 ggplot2::ggsave("figures/article_data/proteo_irt_cv.pdf", prot_qc_plot, width = 12, height = 7)
 
-print(paste(paste0(rownames(irt_liver.mn), ": ", pept.vc), collapse = ", "))
+# print(paste(paste0(rownames(irt_liver.mn), ": ", pept.vc), collapse = ", "))
 
 ```
 
