@@ -367,9 +367,6 @@ prot_qc_plot <- gridExtra::grid.arrange(irt_liver.gg,
                                         widths = c(4, 2),
                                         heights = c(3, 3))
 ggplot2::ggsave("figures/article_data/proteo_irt_cv.pdf", prot_qc_plot, width = 12, height = 7)
-
-# print(paste(paste0(rownames(irt_liver.mn), ": ", pept.vc), collapse = ", "))
-
 ```
 
 ## Metabolomics

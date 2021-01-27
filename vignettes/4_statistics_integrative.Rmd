@@ -23,7 +23,6 @@ output:
 knitr::opts_chunk$set(fig.width = 8,
                       fig.height = 8,
                       fig.path = 'figures/temp/4_statistics_integrative/',
-                      echo = FALSE,
                       warning = FALSE)
 ```
 
@@ -31,13 +30,13 @@ knitr::opts_chunk$set(fig.width = 8,
 
 ## The RGCCA and SGCCA approaches
 
-[@tenenhaus_variable_2014](https://doi.org/10.1093/biostatistics/kxu001)
+[@Tenenhaus_VariableSelectionGeneralized_2014](https://doi.org/10.1093/biostatistics/kxu001)
 
-[@tenenhaus_regularized_2011](https://doi.org/10.1007/s11336-011-9206-8)
+[@Tenenhaus_RegularizedGeneralizedCanonical_2011](https://doi.org/10.1007/s11336-011-9206-8)
 
 ## The mixOmics software
 
-[@rohart_mixomics:_2017](https://doi.org/10.1371/journal.pcbi.1005752)
+[@Rohart_MixomicsRPackage_2017](https://doi.org/10.1371/journal.pcbi.1005752)
 
 ## Application to the ProMetIS dataset
 
@@ -75,22 +74,6 @@ for (gene.c in ProMetIS::genes.vc()) {
     mset <- mset[, setdiff(names(mset), "preclinical")]
     
     exprs.ls <- MultiDataSet::as.list(mset)
-    
-    # ## using 'namecustom' metabolite names to avoid duplication between datasets
-    # 
-    # fdata.ls <- Biobase::fData(mset)
-    # 
-    # for (metset_name.c in grep("met", names(exprs.ls), value = TRUE)) {
-    #   exprs.mn <- exprs.ls[[metset_name.c]]
-    #   fdata.df <- fdata.ls[[metset_name.c]]
-    #   rownames(exprs.mn) <- fdata.df[, "namecustom"]
-    #   exprs.ls[[metset_name.c]] <- exprs.mn
-    # }
-    # 
-    # rownames.ls <- lapply(exprs.ls, rownames)
-    # rownames.vc <- unlist(rownames.ls)
-    # rownames_dup.vc <- rownames.vc[duplicated(rownames.vc)]
-    # stopifnot(length(rownames_dup.vc) == 0)
     
     ## Correcting the 'sex' effect
     

@@ -378,70 +378,22 @@ metadata_select <- function(mset,
                 "mouse_nb",
                 "sex")
   
-  # add.vc <- ""
-  # if (set.c == "preclinical")
-  #   add.vc <- c("mouse_id",
-  #               "genotype",
-  #               "project")
-  
-  # metabolomics
-  
-  # if (grepl("metabolomics", set.c))
-    # add.vc <- "initial_name"
-  
-  # proteomics
-  
-  # if (grepl("proteomics", set.c))
-  #   add.vc <- "Sample.name"
-  
-  # first.vc <- c(first.vc, add.vc)
-  
   return(first.vc)
   
 }
 
 .variable_metadata_select <- function(fdata.df, set.c) {
 
-  ## post-processing
+  # post-processing
   
   if (set.c == "preclinical")
     varmeta.vc <- c("measurement",
                      "category")
   
-  if (grepl("metabolomics", set.c)) {
-    
+  if (grepl("metabolomics", set.c))
     varmeta.vc <- c("chromato",
-                     "MT",
-                     "mz",
-                     "rt",
-                     "isotopes",
-                     "adduct",
-                     "pcgroup",
-                     "redund_group",
-                     "redund_iso_add_frag",
-                     "name")
-    
-    if (grepl("(hyper|hilic)", set.c)) {
-      
-      varmeta.vc <- c(varmeta.vc,
-                       c("formula",
-                         "monoisotopic_mass",
-                         "kegg_id",
-                         "kegg_pathway_family",
-                         "kegg_pathways",
-                         "kegg_subpathways",
-                         "chebi_id",
-                         "hmdb_id",
-                         "pubchem_id",
-                         "inchikey",
-                         "inchi"))
-      
-    } else if (grepl("acqui", set.c))
-      varmeta.vc <- c(varmeta.vc,
-                       "chebi_id",
-                       "annot_level",
-                       "annot_confidence")
-  }
+                    "name",
+                    "chebi_id")
   
   if (grepl("proteomics", set.c))
     varmeta.vc <- c("accession",
@@ -449,13 +401,12 @@ metadata_select <- function(mset,
                      "uniprot_id")
 
   
-  ## hypothesis testing
+  # hypothesis testing
   
   limma_col.vc <- grep("limma", colnames(fdata.df), value = TRUE)
   if (length(limma_col.vc))
     varmeta.vc <- c(varmeta.vc,
                     limma_col.vc)
-    
   
   # VIP
   
@@ -463,24 +414,56 @@ metadata_select <- function(mset,
   if (length(vip_col.vc))
     varmeta.vc <- c(varmeta.vc,
                     vip_col.vc)
-    
-    # Feature selection
-    
+  
+  # Feature selection
+  
   biosign_col.vc <- grep("biosign_", colnames(fdata.df), value = TRUE)
   if (length(biosign_col.vc))
     varmeta.vc <- c(varmeta.vc,
                     biosign_col.vc)
-    
-    
-    # mixOmics
-    
-    mixomics_col.vc <- grep("mixomics_", colnames(fdata.df), value = TRUE)
-    if (length(mixomics_col.vc))
-      varmeta.vc <- c(varmeta.vc,
-                      mixomics_col.vc)
-    
- 
   
+  # mixOmics
+  
+  mixomics_col.vc <- grep("mixomics_", colnames(fdata.df), value = TRUE)
+  if (length(mixomics_col.vc))
+    varmeta.vc <- c(varmeta.vc,
+                    mixomics_col.vc)
+  
+  # complementary metabolomics annotation
+  
+  if (grepl("metabolomics", set.c)) {
+
+    if (grepl("(hyper|hilic)", set.c)) {
+      
+      varmeta.vc <- c(varmeta.vc,
+                      "kegg_id",
+                      "kegg_pathway_family",
+                      "kegg_pathways",
+                      "kegg_subpathways",
+                      "hmdb_id",
+                      "pubchem_id",
+                      "formula",
+                      "monoisotopic_mass",
+                      "inchikey",
+                      "inchi")
+      
+    } else if (grepl("acqui", set.c))
+      varmeta.vc <- c(varmeta.vc,
+                      "annot_level",
+                      "annot_confidence")
+    
+    varmeta.vc <- c(varmeta.vc,
+                    "MT",
+                    "mz",
+                    "rt",
+                    "isotopes",
+                    "adduct",
+                    "pcgroup",
+                    "redund_group",
+                    "redund_iso_add_frag")
+    
+  }
+    
   return(varmeta.vc)
   
 }

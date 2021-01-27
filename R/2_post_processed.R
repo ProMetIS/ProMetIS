@@ -57,8 +57,9 @@
 #  poolCV_over_sampleCV <= 1
 #  Chemical redundancy (Monnerie et al., 1999)
 metabo_postprocessing <- function(metabo.mset,
-                                  drift_correct.c = c("none", "pool", "sample"),
-                                  .discard_pools.l = TRUE) {
+                                  drift_correct.c = c("none", "pool", "sample", "prometis"),
+                                  .discard_pools.l = TRUE,
+                                  span.n = 1) {
   
   for (set.c in names(metabo.mset)) {
     
@@ -137,11 +138,14 @@ metabo_postprocessing <- function(metabo.mset,
     
     ## signal drift correction
     
-    if (drift_correct.c != "none")
+    if (drift_correct.c != "none" ||
+        (drift_correct.c == "prometis" && grepl("acqui", set.c)))
       eset <- phenomis::correcting(eset,
-                                   reference.c = drift_correct.c,
+                                   reference.c = ifelse(drift_correct.c == "prometis",
+                                                        "pool",
+                                                        drift_correct.c),
                                    title.c = gsub("metabolomics_", "", set.c),
-                                   span.n = 2,
+                                   span.n = span.n,
                                    figure.c = ifelse(.discard_pools.l, "none", "interactive"))
     
     # NAs and variances

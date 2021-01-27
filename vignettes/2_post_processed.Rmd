@@ -582,7 +582,11 @@ The workflow consists of the following steps:
 
 ```{r metabolomics_dataMatrix, message=FALSE, warning=FALSE}
 metabo.mset <- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
-                                                drift_correct.c = "sample")
+                                                drift_correct.c = "prometis",
+                                                span.n = 1)
+# metabo.mset <- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
+#                                                 drift_correct.c = "sample",
+#                                                 span.n = 2)
 ```
 
 ## Formatting and ordering sample names
