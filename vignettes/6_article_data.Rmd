@@ -21,7 +21,7 @@ output:
 ```{r options, include=FALSE}
 knitr::opts_chunk$set(fig.width = 8,
                       fig.height = 8,
-                      fig.path = 'figures/article_data/',
+                      fig.path = 'figures/temp/6_article_data/',
                       message = FALSE,
                       warning = FALSE)
 ```
@@ -255,7 +255,7 @@ cv_liver.tb <- suppressMessages(readxl::read_excel(prot_liver_file.c,
                                                      range = "A1:E2469"))
 
 cv_liver.df <- as.data.frame(cv_liver.tb,
-                               stringsAsFactors = FALSE)
+                             stringsAsFactors = FALSE)
 
 cv_liver.df <- cbind.data.frame(type = factor(rep(c("Pool", "WT", "Lat", "Mx2"),
                                                   each = nrow(cv_liver.df)),
@@ -329,33 +329,12 @@ irt_plot <- function(data.mn,
 }
 
 
-cv_plot <- function(data.tb,
-                    tissue.c = c("liver", "plasma")) {
-  
-  color.c <- x.c <- "type"
-  y.c <- "value"
-  
-  p <- ggplot2::ggplot(data.tb, ggplot2::aes(x = type, y = value, color = type)) +
-    ggplot2::geom_boxplot(outlier.size = 1) +
-    ggplot2::scale_colour_brewer(palette = "Set1") +
-    ggplot2::labs(title = tissue.c, x = "", y = "CV (%)") +
-    ggplot2::theme_light() +
-    ggplot2::theme(plot.title = ggplot2::element_text(size = 11, face = "bold"),
-                   axis.title.x = ggplot2::element_text(size = 11, face = "bold"),
-                   axis.title.y = ggplot2::element_text(size = 11, face = "bold"),
-                   axis.text = ggplot2::element_text(size = 11, face = "bold"),
-                   legend.title = ggplot2::element_blank(),
-                   legend.position = "none") +
-    ggplot2::stat_boxplot(geom = "errorbar", width = 0.2)
-  
-  return(invisible(p))
-  
-}
+
 
 irt_liver.gg <- irt_plot(irt_liver.mn)
 irt_plasma.gg <- irt_plot(irt_plasma.mn, "plasma")
-cv_liver.gg <- cv_plot(cv_liver.df)
-cv_plasma.gg <- cv_plot(cv_plasma.df, "plasma")
+cv_liver.gg <- .cv_ggplot(cv_liver.df)
+cv_plasma.gg <- .cv_ggplot(cv_plasma.df, "plasma")
 ```
 
 ```{r}
@@ -379,107 +358,279 @@ metabo.mset <- phenomis::reading(file.path(ProMetIS::processed_dir.c()),
                                  report.c = "none")
 ```
 
-Post-processing the datasets with either no signal drift correction, or a correction based on pools or on samples (the latter is the one used in the workflow; the other two are for comparison); pools are kept (for quality metrics computation and display):
+Post-processing in the 'technical validation' mode (keeping standards, keeping pools, omitting the pool_CV <= 30% and pool_CV_over_sample_CV <= 1 filters)
 
-```{r metabosets_postprocessing}
-correct.vc <- c("none", "pool", "sample")
-
-metabo_mset.ls <- vector(mode = "list", length = length(correct.vc))
-names(metabo_mset.ls) <- correct.vc
-
-for (correct.c in correct.vc) {
-  print(correct.c)
-  metabo_mset.ls[[correct.c]] <- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
-                                                                  drift_correct.c = correct.c,
-                                                                  .discard_pools.l = FALSE)
-}
+```{r metabosets_postprocessing_technical_validation}
+metabo.mset <- ProMetIS:::.metabo_postprocessing(metabo.mset = metabo.mset,
+                                                 drift_correct.c = "prometis",
+                                                 .technical_validation.l = TRUE)
 ```
 
-Log2 transformation:
-
-```{r metabosets_logtransform}
-metabo_mset.ls <- lapply(metabo_mset.ls,
-                         function(mset) phenomis::transforming(mset,
-                                                               report.c = "none"))
-```
-
-For each drift correction, the following quality metrics are computed for each dataset:
-
-* compounds: total number of features
-
-* correl_inj_pca: % of correlation between the 3 first PCA components and the injection order
-
-* pool_spread_pca: % ratio between the maximum QC spread and the maximum sample spread in the 3 first PCA component space assessed by the Mahalanobis distance
+### Quality metrics
 
 ```{r metabosets_quality_metrics}
-quality.mn <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[["none"]])
-
-quality.an <- array(0, dim = c(dim(quality.mn), length(correct.vc)),
-                    dimnames = c(dimnames(quality.mn), list(correct.vc)))
-
-quality.an[, , "none"] <- quality.mn
-
-for (correct.c in correct.vc[-1])
-  quality.an[, , correct.c] <- ProMetIS:::quality(metabo.mset = metabo_mset.ls[[correct.c]])
+quality_metrics.ls <- ProMetIS:::.metabo_quality_metrics(metabo.mset)
 ```
 
-```{r metabosets_quality_metrics_print}
-for(correct.c in correct.vc) {
-  print(correct.c)
-  print(signif(apply(quality.an[, c("correl_inj_pca", "pool_spread_pca"), correct.c],
-                     2,
-                     function(x) c(mean = mean(x), sd = sd(x))), 2))
-}
+```{r}
+knitr::kable(round(quality_metrics.ls[["quality.mn"]]))
 ```
 
-For each drift correction, PCA score plot of each dataset:
+```{r inj_order_radarplot}
+quality.df <- as.data.frame(t(as.matrix(quality_metrics.ls[["quality.mn"]][c("correl_inj_test",
+                                                                             "correl_inj_pca",
+                                                                             "pool_spread_pca",
+                                                                             "poolCV_0.3",
+                                                                             "ICCpool"), ])))
+colnames(quality.df) <- c("spearman", "pca", "spread", "cv", "icc")
+quality.df <- cbind.data.frame(group = rownames(quality.df),
+                               quality.df)
+for (metric.c in c("spearman", "pca", "spread"))
+  quality.df[, metric.c] <- 100 - quality.df[, metric.c]
+
+quality.ggradar <- ggradar::ggradar(quality.df,
+                                    base.size = 12,
+                                    values.radar = c("0", "50", "100"),
+                                    grid.min = 0, grid.mid = 50, grid.max = 100,
+                                    # Polygones
+                                    group.line.width = 2, 
+                                    group.point.size = 3,
+                                    group.colours = RColorBrewer::brewer.pal(9, "Set1")[c(1:5, 7)],
+                                    # Background
+                                    background.circle.colour = "white",
+                                    gridline.mid.colour = "grey",
+                                    # Legend
+                                    plot.title = "Quality metrics",
+                                    legend.text.size = 10,
+                                    legend.position = "bottom")
+
+
+ggplot2::ggsave("figures/article_data/metabo_injOrder_radar.pdf",
+                quality.ggradar,
+                height = 10.5, width = 7)
+
+quality.mn <- quality.df[, -1]
+print(round(quality.mn))
+print(round(apply(quality.mn, 1, function(x) c(min = min(x), mean = mean(x), max = max(x)))))
+```
+
+### Score plots
 
 ```{r metabosets_quality_scoreplots}
-for (correct.c in correct.vc) {
-  metabo.mset <- metabo_mset.ls[[correct.c]]
-  scoreplot.ls <- vector(mode = "list", length = length(ProMetIS::metabo_sets.vc()))
-  names(scoreplot.ls) <- ProMetIS::metabo_sets.vc()
+scoreplot.ls <- vector(mode = "list", length = length(ProMetIS::metabo_sets.vc()))
+names(scoreplot.ls) <- ProMetIS::metabo_sets.vc()
+
+for (set.c in names(metabo.mset)) {
   
-  for (set.c in ProMetIS::metabo_sets.vc()) {
-    
-    eset <- metabo.mset[[set.c]]
-    pdata.df <- Biobase::pData(eset)
-    pdata.df[, "order"] <- pdata.df[, "injectionOrder"]
-    if (grepl("acqui", set.c))
-      pdata.df[, "order"] <- pdata.df[, "order"] - min(pdata.df[, "order"]) + 1
-    pdata.df[, "label"] <- ifelse(pdata.df[, "sampleType"] == "pool", "QC", "s")
-    Biobase::pData(eset) <- pdata.df
-    eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
-    scoreplot.ls[[set.c]] <- ProMetIS:::score_plotly(eset.pca,
-                                                     label.c = "label",
-                                                     color.c = "order",
-                                                                                                          title.c = gsub("metabolomics_", "", set.c),
-                                                     # title.c = paste0(gsub("metabolomics_", "", set.c), "\n(corr. inj.: ", round(quality.an[gsub("metabolomics_", "", set.c), "correl_inj_pca", "sample"]), "%)"),
-                                                     figure.c = "interactive",
-                                                     size.ls = list(axis_lab.i = 12,
-                                                                    axis_text.i = 10,
-                                                                    point.i = 2,
-                                                                    label.i = 4,
-                                                                    title.i = 15,
-                                                                    legend_title.i = 10,
-                                                                    legend_text.i = 10),
-                                                     plot.l = FALSE)
-    
-  }
+  eset <- metabo.mset[[set.c]]
   
-  scoreplots.p <- gridExtra::grid.arrange(grobs = scoreplot.ls[c("metabolomics_liver_c18hyper_pos",
-                                                                 "metabolomics_plasma_c18hyper_pos",
-                                                                 "metabolomics_plasma_c18acqui_pos",
-                                                                 "metabolomics_liver_hilic_neg",
-                                                                 "metabolomics_plasma_hilic_neg",
-                                                                 "metabolomics_plasma_c18acqui_neg")],
-                                          nrow = 2)
-  ggplot2::ggsave(paste0("figures/article_data/metabo_qc_", correct.c, ".pdf"), scoreplots.p, width = 12)
+  eset <- eset[, Biobase::pData(eset)[, "sampleType"] %in% c("pool", "sample")]
+  
+  pdata.df <- Biobase::pData(eset)
+  pdata.df[, "order"] <- pdata.df[, "injectionOrder"]
+  if (grepl("acqui", set.c))
+    pdata.df[, "order"] <- pdata.df[, "order"] - min(pdata.df[, "order"]) + 1
+  pdata.df[, "label"] <- ifelse(pdata.df[, "sampleType"] == "pool", "QC", "s")
+  Biobase::pData(eset) <- pdata.df
+  
+  eset.pca <- ropls::opls(eset, predI = 2, fig.pdfC = "none", info.txtC = "none")
+  
+  scoreplot.ls[[set.c]] <- ProMetIS:::score_plotly(eset.pca,
+                                                   label.c = "label",
+                                                   color.c = "order",
+                                                   title.c = gsub("metabolomics_", "", set.c),
+                                                   figure.c = "interactive",
+                                                   size.ls = list(axis_lab.i = 12,
+                                                                  axis_text.i = 10,
+                                                                  point.i = 2,
+                                                                  label.i = 4,
+                                                                  title.i = 15,
+                                                                  legend_title.i = 10,
+                                                                  legend_text.i = 10),
+                                                   plot.l = FALSE)
+  
 }
 
+scoreplots.p <- gridExtra::grid.arrange(grobs = scoreplot.ls[c("metabolomics_liver_c18hypersil_pos",
+                                                               "metabolomics_plasma_c18hypersil_pos",
+                                                               "metabolomics_plasma_c18acquity_pos",
+                                                               "metabolomics_liver_hilic_neg",
+                                                               "metabolomics_plasma_hilic_neg",
+                                                               "metabolomics_plasma_c18acquity_neg")],
+                                        nrow = 2)
+
+ggplot2::ggsave(paste0("figures/article_data/metabo_qc.pdf"), scoreplots.p,
+                height = 7, width = 10.5)
+```
+
+### Drift
+
+```{r metabo_drifts}
+pdf("figures/article_data/metabo_drifts.pdf",
+    height = 7, width = 10.5)
+
+layout(mat = matrix(1:6, nrow = 2),
+       heights = c(3.5, 3.5),
+       widths = c(3.5, 3.5, 3.5))
+
+for (set.c in names(metabo.mset)) {
+  eset <- metabo.mset[[set.c]]
+  ProMetIS:::.metabo_drift_plot(eset, title.c = gsub("metabolomics_", "", set.c))
+}
+
+dev.off()
+```
+
+### CV
+
+```{r metabo_cv}
+cv_ggplot.ls <- vector(mode = "list", length = length(names(metabo.mset)))
+names(cv_ggplot.ls) <- names(metabo.mset)
+
+for (set.c in names(metabo.mset)) {
+  
+  # set.c <- names(metabo.mset)[2]
+  eset <- metabo.mset[[set.c]]
+  eset <- eset[, Biobase::pData(eset)[, "sampleType"] %in% c("pool", "sample")]
+  
+  genotype.vc <- tolower(substr(Biobase::pData(eset)[,
+                                                     ifelse(grepl("(hyper|hilic)", set.c),
+                                                            "KO", "Type")], 1, 1))
+  
+  type.vc <- vapply(seq_len(Biobase::dims(eset)["Samples", 1]),
+                    function(sample.i) {
+                      if (Biobase::pData(eset)[sample.i, "sampleType"] == "pool") {
+                        return("Pool")
+                      } else if (genotype.vc[sample.i] == "l") {
+                        return("Lat")
+                      } else if (genotype.vc[sample.i] == "m") {
+                        return("Mx2")
+                      } else {
+                        return("WT")
+                      }
+                    }, FUN.VALUE = character(1))
+  cv.mn <- 100 * as.matrix(t(apply(Biobase::exprs(eset), 1,
+                                   function(feat.vn) {
+                                     tapply(feat.vn, type.vc,
+                                            function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE))
+                                   })))
+  
+  cv.df <- cbind.data.frame(type = factor(rep(c("Pool", "WT", "Lat", "Mx2"),
+                                              each = nrow(cv.mn)),
+                                          levels = c("Pool", "WT", "Lat", "Mx2")),
+                            value = c(cv.mn[, "Pool"], cv.mn[, "WT"],
+                                      cv.mn[, "Lat"], cv.mn[, "Mx2"]))
+  
+  cv_ggplot.ls[[set.c]] <- ProMetIS:::.cv_ggplot(cv.df, title.c = gsub("metabolomics_", "", set.c))
+  
+}
+
+metabo_cv_plot <- gridExtra::marrangeGrob(cv_ggplot.ls,
+                                          nrow = 2, ncol = 3)
+
+ggplot2::ggsave(paste0("figures/article_data/metabo_cv.pdf"), metabo_cv_plot,
+                height = 7, width = 10.5)
 ```
 
 
+```{r metabo_quality_cv_percent}
+pdf("figures/article_data/metabo_quality_cv_percent.pdf",
+    height = 7, width = 10.5)
+
+ProMetIS:::.metabo_quality_plot(quality_metrics.ls = quality_metrics.ls, "cv_percent")
+
+dev.off()
+```
+
+### ICC
+
+```{r metabo_quality_icc_intens}
+pdf("figures/article_data/metabo_quality_icc_intens.pdf",
+    height = 7, width = 10.5)
+    
+ProMetIS:::.metabo_quality_plot(quality_metrics.ls = quality_metrics.ls, "icc_intens")
+
+dev.off()
+```
+
+### Standards
 
 
-
+```{r metabo_standards_matching}
+for (set.c in grep("(c18hyper|hilic)", names(metabo.mset), value = TRUE)) {
+  
+  # set.c <- grep("(c18hyper|hilic)", names(metabo.mset), value = TRUE)[2]
+  
+  eset <- metabo.mset[[set.c]]
+  eset <- eset[Biobase::fData(eset)[, "standard"] != "",
+               Biobase::pData(eset)[, "sampleType"] %in% c("pool", "sample")]
+  
+  #ggplot needs a dataframe
+  exprs.mn <- Biobase::exprs(eset)
+  
+  tlog2exprs.df <- as.data.frame(t(log2(1 + exprs.mn)))
+  colnames(tlog2exprs.df) <- Biobase::fData(eset)[, "standard"]
+  
+  stand_unselect.vc <- switch(set.c,
+                              metabolomics_liver_c18hypersil_pos = {
+                                ""
+                              },
+                              metabolomics_liver_hilic_neg = {
+                                "Prednisone [ExS]"
+                              },
+                              metabolomics_plasma_c18hypersil_pos = {
+                                c("2-Aminoanthracene [ExS]",
+                                  "Alanine 13C [ExS]",
+                                  "AMPA")
+                              },
+                              metabolomics_plasma_hilic_neg = {
+                                c("Amiloride [ExS]",
+                                  "Ethylmalonic acid [ExS]")
+                              })
+  tlog2exprs.df <- tlog2exprs.df[, setdiff(colnames(tlog2exprs.df), stand_unselect.vc), drop = FALSE]
+  
+  #id variable for position in matrix 
+  tlog2exprs.df$id <- 1:nrow(tlog2exprs.df) 
+  #reshape to long format
+  ggplot.df <- reshape2::melt(tlog2exprs.df, id.var = "id")
+  
+  ggplot.df[, "sample"] <- factor(rep(gsub("pool1", "pool",
+                                           Biobase::pData(eset)[, "sampleType"]),
+                                      ncol(tlog2exprs.df) - 1),
+                                  levels = c("pool",
+                                             "sample"))
+  
+  ggplot.df[, "compound_standard"] <- ggplot.df[, "variable"]
+  ggplot.df[, "compound"] <- vapply(as.character(ggplot.df[, "compound_standard"]),
+                                           function(comp.c) {
+                                             bracket.i <- which(unlist(strsplit(comp.c, split = "")) == "[")
+                                             substr(comp.c, 1, bracket.i - 2)
+                                           }, character(1))
+  ggplot.df[, "standard"] <- vapply(as.character(ggplot.df[, "compound_standard"]),
+                                    function(comp.c) {
+                                      bracket.i <- which(unlist(strsplit(comp.c, split = "")) == "[")
+                                      substr(comp.c, bracket.i, nchar(comp.c))
+                                    }, character(1))
+  ggplot.df[, "injectionOrder"] <- ggplot.df[, "id"]
+  ggplot.df[, "intensity"] <- ggplot.df[, "value"]
+  
+  #plot
+  stand.ggplot <- ggplot2::ggplot(ggplot.df,
+                                  ggplot2::aes(x = injectionOrder,
+                                               y = intensity,
+                                               group = compound,
+                                               colour = compound)) +
+    ggplot2::geom_point(ggplot2::aes(shape = sample), size = 3) +
+    ggplot2::geom_line(ggplot2::aes(lty = standard), size = 2) +
+    ggplot2::labs(title = gsub("metabolomics_", "", set.c),
+                  x = "Injection order", y = "Intensity") +
+    ggplot2::scale_shape_manual(values = c(15, 16)) +
+    ggplot2::scale_color_brewer(palette = "Dark2") +
+    ggplot2::coord_cartesian(ylim = c(0, 30)) +
+    ggplot2::theme_light()
+  
+  ggplot2::ggsave(paste0("figures/article_data/metabo_standards_", gsub("metabolomics_", "", set.c), ".pdf"),
+                  stand.ggplot, width = 12)
+  
+}
+```

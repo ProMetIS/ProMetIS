@@ -37,13 +37,13 @@ sets.vc <- function() {
     "proteomics_liver",
     "proteomics_plasma",
     
-    "metabolomics_liver_c18hyper_pos",
+    "metabolomics_liver_c18hypersil_pos",
     "metabolomics_liver_hilic_neg",
 
-    "metabolomics_plasma_c18hyper_pos",
+    "metabolomics_plasma_c18hypersil_pos",
     "metabolomics_plasma_hilic_neg",
-    "metabolomics_plasma_c18acqui_pos",
-    "metabolomics_plasma_c18acqui_neg")
+    "metabolomics_plasma_c18acquity_pos",
+    "metabolomics_plasma_c18acquity_neg")
 }
 
 
@@ -55,19 +55,19 @@ proteo_sets.vc <- function() {
 
 #' @export
 metabo_sets.vc <- function() {
-  c("metabolomics_liver_c18hyper_pos",
+  c("metabolomics_liver_c18hypersil_pos",
     "metabolomics_liver_hilic_neg",
 
-    "metabolomics_plasma_c18hyper_pos",
+    "metabolomics_plasma_c18hypersil_pos",
     "metabolomics_plasma_hilic_neg",
-    "metabolomics_plasma_c18acqui_pos",
-    "metabolomics_plasma_c18acqui_neg")
+    "metabolomics_plasma_c18acquity_pos",
+    "metabolomics_plasma_c18acquity_neg")
 }
 
 #' @export
 liver_sets.vc <- function() {
   c("proteomics_liver",
-    "metabolomics_liver_c18hyper_pos",
+    "metabolomics_liver_c18hypersil_pos",
     "metabolomics_liver_hilic_neg")
 }
 
@@ -75,10 +75,10 @@ liver_sets.vc <- function() {
 plasma_sets.vc <- function() {
   c("proteomics_plasma",
 
-    "metabolomics_plasma_c18hyper_pos",
+    "metabolomics_plasma_c18hypersil_pos",
     "metabolomics_plasma_hilic_neg",
-    "metabolomics_plasma_c18acqui_pos",
-    "metabolomics_plasma_c18acqui_neg")
+    "metabolomics_plasma_c18acquity_pos",
+    "metabolomics_plasma_c18acquity_neg")
 }
 
 #' @export

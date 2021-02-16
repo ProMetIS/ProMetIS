@@ -21,7 +21,7 @@ output:
 ```{r options, include=FALSE}
 knitr::opts_chunk$set(fig.width = 8,
                       fig.height = 8,
-                      fig.path = 'figures/tutorial/',
+                      fig.path = 'figures/temp/tutorial/',
                       message = FALSE,
                       warning = FALSE)
 ```

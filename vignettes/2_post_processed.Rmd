@@ -574,19 +574,15 @@ The workflow consists of the following steps:
 |0.4 <= RT <= 22     |                   |                   |                   |                   |         X         |         X         |
 |blank/samp   <= 0.33|         X         |         X         |         X         |         X         |         X         |         X         |
 |poolDil: cor >= 0.7 |         X         |         X         |         X         |         X         |                   |                   |
-|drift samp, span = 2|         X         |         X         |         X         |         X         |         X         |         X         |
+|drift loess, span=1 |        none       |        none       |        pool       |        pool       |       sample      |       sample      |
 |NA <= 20% & var > 0 |         X         |         X         |         X         |         X         |         X         |         X         |
 |pool CV       <= 0.3|         X         |         X         |         X         |         X         |         X         |         X         |
 |poolCV/sampCV <= 1  |         X         |         X         |         X         |         X         |         X         |         X         |
 |corr, dRT, dmz      |         X         |         X         |         X         |         X         |         X         |         X         |
 
 ```{r metabolomics_dataMatrix, message=FALSE, warning=FALSE}
-metabo.mset <- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
-                                                drift_correct.c = "prometis",
-                                                span.n = 1)
-# metabo.mset <- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
-#                                                 drift_correct.c = "sample",
-#                                                 span.n = 2)
+metabo.mset <- ProMetIS:::.metabo_postprocessing(metabo.mset = metabo.mset,
+                                                 drift_correct.c = "prometis")
 ```
 
 ## Formatting and ordering sample names

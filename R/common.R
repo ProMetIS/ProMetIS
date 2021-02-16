@@ -548,128 +548,112 @@ DAPAR_is.MV <- function(data)
   return(df)
 }
 
-#' Computing the 'imputation' sample nb and percent (i.e. 'imputed by Prostar')
-#' for each variable (for the variables with too high imputation metric in both
-#' genotype conditions to be removed in the statistical analysis )
-# #' @export
-# imputation_metrics <- function(eset) {
-#   
-#   prot_pda.df <- Biobase::pData(eset)
-#   prot_fda.df <- Biobase::fData(eset)
-#   prot_samp.vc <- Biobase::sampleNames(eset)
-#   
-#   ## checking that the sample names are ordered by increasing ID
-#   prot_samp.vi <- as.integer(substr(prot_samp.vc, 2, 4))
-#   stopifnot(identical(prot_samp.vi, sort(prot_samp.vi)))
-#   
-#   ## getting imputation info
-#   value_origin.df <- prot_fda.df[, grep("OriginOfValueabundance",
-#                                         colnames(prot_fda.df), value = TRUE)]
-#   colnames(value_origin.df) <- gsub("_run90methode30K",
-#                                     "",
-#                                     gsub("_mgf", "",
-#                                          gsub("supp_OriginOfValueabundance_", "",
-#                                               colnames(value_origin.df))))
-#   
-#   ## re-ordering imputation info to match sample names
-#   if (Biobase::experimentData(eset)@title == "proteomics_liver") {
-#     file_to_sample.vc <- prot_pda.df[, "supp_sample name"]
-#     names(file_to_sample.vc) <- gsub("abundance_", "",
-#                                      gsub(".mgf", "",
-#                                           prot_pda.df[, "supp_Sample.name"], fixed = TRUE))
-#     colsel.vl <- colnames(value_origin.df) %in% names(file_to_sample.vc)
-#     value_origin.df <- value_origin.df[, colsel.vl]
-#     colnames(value_origin.df) <- file_to_sample.vc[colnames(value_origin.df)]
-#   }
-#   
-#   value_samp.vi <- as.integer(colnames(value_origin.df), 1, 3)
-#   value_origin.df <- value_origin.df[, order(value_samp.vi)]
-#   
-#   ## getting genotype factor
-#   gene.fc <- factor(prot_pda.df[, "gene"],
-#                     levels = c("WT", ProMetIS::genes.vc()))
-#   
-#   ## getting sex factor
-#   sex.fc <- factor(prot_pda.df[, "sex"],
-#                    levels = ProMetIS::sex.vc())
-#   
-#   ## WT, LAT and MX2 imputation metric
-#   imputed.mn <- t(apply(value_origin.df, 1, function(value.vc) {
-#     tapply(value.vc, gene.fc, function(x) sum(DAPAR_is.MV(x)))
-#   }))
-#   imputed.mn <- round(sweep(imputed.mn, 2, table(gene.fc), "/"), 2)
-#   colnames(imputed.mn) <- paste0("imputed_mfWLX_", colnames(imputed.mn))
-#   
-#   prot_fda.df <- cbind.data.frame(prot_fda.df,
-#                                   imputed.mn)
-#   
-#   if (Biobase::experimentData(eset)@title == "proteomics_liver") {
-#     
-#     ## LAT and WT imputation metric by sex
-#     ### M
-#     mWL_sel.vl <- gene.fc %in% c("WT", "LAT") & sex.fc == "M"
-#     mWL_gene.fc <- factor(gene.fc[mWL_sel.vl])
-#     mWL_value.df <- value_origin.df[, mWL_sel.vl]
-#     
-#     mWL_imputed.mn <- t(apply(mWL_value.df, 1, function(value.vc) {
-#       tapply(value.vc, mWL_gene.fc, function(x) sum(DAPAR_is.MV(x)))
-#     }))
-#     mWL_imputed.mn <- round(sweep(mWL_imputed.mn, 2,
-#                                   table(mWL_gene.fc), "/"), 2)
-#     colnames(mWL_imputed.mn) <- paste0("imputed_mWL_",
-#                                        colnames(mWL_imputed.mn))
-#     
-#     ### F
-#     fWL_sel.vl <- gene.fc %in% c("WT", "LAT") & sex.fc == "F"
-#     fWL_gene.fc <- factor(gene.fc[fWL_sel.vl])
-#     fWL_value.df <- value_origin.df[, fWL_sel.vl]
-#     
-#     fWL_imputed.mn <- t(apply(fWL_value.df, 1, function(value.vc) {
-#       tapply(value.vc, fWL_gene.fc, function(x) sum(DAPAR_is.MV(x)))
-#     }))
-#     fWL_imputed.mn <- round(sweep(fWL_imputed.mn, 2,
-#                                   table(fWL_gene.fc), "/"), 2)
-#     colnames(fWL_imputed.mn) <- paste0("imputed_fWL_",
-#                                        colnames(fWL_imputed.mn))
-#     
-#     ## M and F imputation by (LAT/WT)
-#     ### WT
-#     mfW_sel.vl <- gene.fc == "WT"
-#     mfW_sex.fc <- factor(sex.fc[mfW_sel.vl])
-#     mfW_value.df <- value_origin.df[, mfW_sel.vl]
-#     
-#     mfW_imputed.mn <- t(apply(mfW_value.df, 1, function(value.vc) {
-#       tapply(value.vc, mfW_sex.fc, function(x) sum(DAPAR_is.MV(x)))
-#     }))
-#     mfW_imputed.mn <- round(sweep(mfW_imputed.mn, 2,
-#                                   table(mfW_sex.fc), "/"), 2)
-#     colnames(mfW_imputed.mn) <- paste0("imputed_mfW_",
-#                                        colnames(mfW_imputed.mn)) 
-#     
-#     ### LAT
-#     mfL_sel.vl <- gene.fc == "LAT"
-#     mfL_sex.fc <- factor(sex.fc[mfL_sel.vl])
-#     mfL_value.df <- value_origin.df[, mfL_sel.vl]
-#     
-#     mfL_imputed.mn <- t(apply(mfL_value.df, 1, function(value.vc) {
-#       tapply(value.vc, mfL_sex.fc, function(x) sum(DAPAR_is.MV(x)))
-#     }))
-#     mfL_imputed.mn <- round(sweep(mfL_imputed.mn, 2,
-#                                   table(mfL_sex.fc), "/"), 2)
-#     colnames(mfL_imputed.mn) <- paste0("imputed_mfL_",
-#                                        colnames(mfL_imputed.mn))
-#     
-#     
-#     prot_fda.df <- cbind.data.frame(prot_fda.df,
-#                                     mWL_imputed.mn,
-#                                     fWL_imputed.mn,
-#                                     mfW_imputed.mn,
-#                                     mfL_imputed.mn)
-#     
-#   }
-#   
-#   Biobase::fData(eset) <- prot_fda.df
-#   
-#   eset
-#   
-# }
+## Metabolomics ----
+
+.standards <- function() {
+  
+  standard_file.c <- "//10.0.238.33/Data/Phenostore/data/ProMetIS/cs1_phenomin/0_raw/metabolomics_standards.xlsx"
+  standard.df <- as.data.frame(readxl::read_excel(standard_file.c,
+                                               sheet = 1,
+                                               skip = 4,
+                                               n_max = 17),
+                            stringsAsFactors = FALSE)
+  colnames(standard.df) <- gsub("Maximum shift (mn)", "max_shift_mn",
+                             gsub("Mass accuracy (ppm)", "mass_accur_ppm",
+                                  gsub("CV* (%)", "cv_percent",
+                                       gsub("Rt  (min)", "rt_min",
+                                            colnames(standard.df),
+                                            fixed = TRUE),
+                                       fixed = TRUE),
+                                  fixed = TRUE),
+                             fixed = TRUE)
+  standard_colname_comp.df <- as.data.frame(readxl::read_excel(standard_file.c,
+                                                            sheet = 1,
+                                                            skip = 3,
+                                                            n_max = 2),
+                                         stringsAsFactors = FALSE)
+  standard_colname_comp.vc <- gsub("Compound", "compound",
+                                gsub("Elemental formula", "formula",
+                                     gsub("Exact Mass", "mass_exact",
+                                          gsub("EI+", "EI_pos",
+                                               gsub("EI-", "EI_neg",
+                                                    gsub("Concentration", "concentration",
+                                                         gsub("Retention time", "rt",
+                                                              gsub("Mass measurement", "mass_measured",
+                                                                   colnames(standard_colname_comp.df),
+                                                                   fixed = TRUE),
+                                                              fixed = TRUE),
+                                                         fixed = TRUE),
+                                                    fixed = TRUE),
+                                               fixed = TRUE),
+                                          fixed = TRUE),
+                                     fixed = TRUE),
+                                fixed = TRUE)
+  colnames(standard.df) <- paste0(vapply(standard_colname_comp.vc,
+                                      function(x) {
+                                        unlist(strsplit(x, split = "...", fixed = TRUE))[1]
+                                      }, FUN.VALUE = character(1), USE.NAMES = FALSE),
+                               vapply(colnames(standard.df),
+                                      function(x) {
+                                        name.c <- unlist(strsplit(x, split = "...", fixed = TRUE))[1]
+                                        if (name.c != "")
+                                          name.c <- paste0("@", name.c)
+                                        if (name.c %in% c("@max_shift_mn", "@cv_percent"))
+                                          name.c <- paste0("rt", name.c)
+                                        return(name.c)
+                                      }, FUN.VALUE = character(1), USE.NAMES = FALSE))
+  colnames(standard.df)[1] <- "standard"
+  
+  standard.df[, "ei_pos_mz"] <- as.numeric(vapply(standard.df[, "EI_pos"],
+                                               function(x) unlist(strsplit(x, split = " "))[1],
+                                               FUN.VALUE = character(1)))
+  standard.df[, "ei_pos_c8_rt"] <- as.numeric(vapply(standard.df[, 8],
+                                                  function(x) unlist(strsplit(x, split = " "))[1],
+                                                  FUN.VALUE = character(1))) * 60
+  standard.df[, "ei_neg_c8_rt"] <- as.numeric(vapply(standard.df[, 12],
+                                                  function(x) unlist(strsplit(x, split = " "))[1],
+                                                  FUN.VALUE = character(1))) * 60
+  standard.df[, "ei_neg_mz"] <- as.numeric(vapply(standard.df[, "EI_neg"],
+                                               function(x) unlist(strsplit(x, split = " "))[1],
+                                               FUN.VALUE = character(1)))
+  standard.df[, "ei_pos_hilic_rt"] <- as.numeric(vapply(standard.df[, 24],
+                                                     function(x) unlist(strsplit(x, split = " "))[1],
+                                                     FUN.VALUE = character(1))) * 60
+  standard.df[, "ei_neg_hilic_rt"] <- as.numeric(vapply(standard.df[, 28],
+                                                     function(x) unlist(strsplit(x, split = " "))[1],
+                                                     FUN.VALUE = character(1))) * 60
+  
+  standard.df <- standard.df[, c("standard",
+                           "compound",
+                           "formula",
+                           "concentration",
+                           "mass_exact",
+                           "ei_pos_mz",
+                           "ei_pos_c8_rt",
+                           "ei_pos_hilic_rt",
+                           "ei_neg_mz",
+                           "ei_neg_c8_rt",
+                           "ei_neg_hilic_rt")]
+  
+  colnames(standard.df)[5:11] <- c("mass",
+                                "mz_pos",
+                                "rt_pos_c8",
+                                "rt_pos_hilic",
+                                "mz_neg",
+                                "rt_neg_c8",
+                                "rt_neg_hilic")
+  
+  rownames(standard.df) <- standard.df[, "compound"]
+  
+  standard.df <- standard.df[order(standard.df[, "standard"], standard.df[, "compound"]), ]
+  
+  standard.df[, "color"] <- rev(rainbow(nrow(standard.df), end = 4/6))
+  
+  rownames(standard.df) <- gsub("AMPA 2-amino-3-(3-hydroxy-5-methyl-isoxazol-4-yl)propanoic acid",
+                             "AMPA",
+                             gsub("MCPA 2-methyl-4-chlorophenoxyacetic acid", "MCPA",
+                                  rownames(standard.df), fixed = TRUE), fixed = TRUE)
+  
+  standard.df
+  
+}

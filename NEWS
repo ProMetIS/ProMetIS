@@ -1,3 +1,10 @@
+CHANGES IN VERSION 0.3.28
+------------------------------
+
+NEW FEATURE
+
+    o post-processing of metabolomics datasets: loess normalization: 'none' for the c18hypersil/hilic liver datasets, 'pool' for the c18hypersil/hilic plasma datasets, and 'sample' for the acquity datasets
+
 CHANGES IN VERSION 0.3.26
 ------------------------------
 
