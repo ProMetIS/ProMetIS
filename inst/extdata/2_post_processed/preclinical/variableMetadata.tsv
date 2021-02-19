@@ -22,7 +22,9 @@ Auditory.startle.reflex.reactivity.and.PPI...P1.PP90	Auditory startle reflex rea
 Auditory.startle.reflex.reactivity.and.PPI...P1.ST110	Auditory startle reflex reactivity and PPI - P1:ST110	Auditory and PPI
 Auditory.startle.reflex.reactivity.and.PPI...P1.nb.cage	Auditory startle reflex reactivity and PPI - P1:nb/cage	Auditory and PPI
 Body.Weight.body.weight.w7..g.	Body Weight:body weight w7 (g)	Body
+Clinical.chemistry.parameters.ALAT..U.l.	Clinical chemistry parameters:ALAT (U/l)	Clinical chemistry
 Clinical.chemistry.parameters.ALP..U.l.	Clinical chemistry parameters:ALP (U/l)	Clinical chemistry
+Clinical.chemistry.parameters.ASAT..U.l.	Clinical chemistry parameters:ASAT (U/l)	Clinical chemistry
 Clinical.chemistry.parameters.Albumin..g.l.	Clinical chemistry parameters:Albumin (g/l)	Clinical chemistry
 Clinical.chemistry.parameters.Blood.Urea.Nitrogen.mg.dl..mg.dl.	Clinical chemistry parameters:Blood Urea Nitrogen mg/dl (mg/dl)	Clinical chemistry
 Clinical.chemistry.parameters.Glucose..mmol.l.	Clinical chemistry parameters:Glucose (mmol/l)	Clinical chemistry
@@ -45,7 +47,6 @@ Dysmorphology.IMPC.Loc..activity	Dysmorphology IMPC:Loc. activity	Dysmorphology
 Dysmorphology.IMPC.Nb.cage	Dysmorphology IMPC:Nb/cage	Dysmorphology
 Dysmorphology.IMPC.Startle.response	Dysmorphology IMPC:Startle response	Dysmorphology
 Dysmorphology.IMPC.Transfer.arousal	Dysmorphology IMPC:Transfer arousal	Dysmorphology
-Dysmorphology.IMPC.Vibrissae...presence	Dysmorphology IMPC:Vibrissae - presence	Dysmorphology
 ECG.in.anaesthetized.conditions.HR..bpm.	ECG in anaesthetized conditions:HR (bpm)	ECG
 ECG.in.anaesthetized.conditions.Number.of.signals	ECG in anaesthetized conditions:Number of signals	ECG
 ECG.in.anaesthetized.conditions.PR..ms.	ECG in anaesthetized conditions:PR (ms)	ECG
@@ -72,17 +73,22 @@ Echocardiography.using.the.Vevo.light.LVID_s..mm.	Echocardiography using the Vev
 Echocardiography.using.the.Vevo.light.LVPW_d..mm.	Echocardiography using the Vevo light:LVPW_d (mm)	Echocardiography
 Echocardiography.using.the.Vevo.light.LVPW_s..mm.	Echocardiography using the Vevo light:LVPW_s (mm)	Echocardiography
 Eye.Morphology.Body.weight..g.	Eye Morphology:Body weight (g)	Eye
-Eye.Morphology.Fusion.between.cornea.and.lens	Eye Morphology:Fusion between cornea and lens	Eye
-Eye.Morphology.Iris.Pigmentation	Eye Morphology:Iris Pigmentation	Eye
-Eye.Morphology.Iris.transilumination	Eye Morphology:Iris transilumination	Eye
-Eye.Morphology.Iris.Pupil	Eye Morphology:Iris/Pupil	Eye
-Eye.Morphology.Lens	Eye Morphology:Lens	Eye
-Eye.Morphology.Lens.Opacity	Eye Morphology:Lens Opacity	Eye
-Eye.Morphology.Pupil.Dilation	Eye Morphology:Pupil Dilation	Eye
-Eye.Morphology.Pupil.Light.Response	Eye Morphology:Pupil Light Response	Eye
-Eye.Morphology.Pupil.Position	Eye Morphology:Pupil Position	Eye
-Eye.Morphology.Pupil.Shape	Eye Morphology:Pupil Shape	Eye
-Eye.Morphology.Synechia	Eye Morphology:Synechia	Eye
+Eye.Morphology.Left.inner.plexiform.layer..痠.	Eye Morphology:Left inner plexiform layer (痠)	Eye
+Eye.Morphology.Left.segments..痠.	Eye Morphology:Left segments (痠)	Eye
+Eye.Morphology.Left.vitreous.humor.thickness..痠.	Eye Morphology:Left vitreous humor thickness (痠)	Eye
+Eye.Morphology.OCT.left.anterior.chamber.depth	Eye Morphology:OCT left anterior chamber depth	Eye
+Eye.Morphology.OCT.left.corneal.thickness	Eye Morphology:OCT left corneal thickness	Eye
+Eye.Morphology.OCT.left.inner.nuclear.layer..痠.	Eye Morphology:OCT left inner nuclear layer (痠)	Eye
+Eye.Morphology.OCT.left.outer.nuclear.layer..痠.	Eye Morphology:OCT left outer nuclear layer (痠)	Eye
+Eye.Morphology.OCT.left.total.retinal.thickness..痠.	Eye Morphology:OCT left total retinal thickness (痠)	Eye
+Eye.Morphology.OCT.right.anterior.chamber.depth	Eye Morphology:OCT right anterior chamber depth	Eye
+Eye.Morphology.OCT.right.corneal.thickness	Eye Morphology:OCT right corneal thickness	Eye
+Eye.Morphology.OCT.right.inner.nuclear.layer..痠.	Eye Morphology:OCT right inner nuclear layer (痠)	Eye
+Eye.Morphology.OCT.right.outer.nuclear.layer..痠.	Eye Morphology:OCT right outer nuclear layer (痠)	Eye
+Eye.Morphology.OCT.right.total.retinal.thickness..痠.	Eye Morphology:OCT right total retinal thickness (痠)	Eye
+Eye.Morphology.Right.inner.plexiform.layer..痠.	Eye Morphology:Right inner plexiform layer (痠)	Eye
+Eye.Morphology.Right.segments..痠.	Eye Morphology:Right segments (痠)	Eye
+Eye.Morphology.Right.vitreous.humor.thickness..痠.	Eye Morphology:Right vitreous humor thickness (痠)	Eye
 Grip.test.Grip.mean..4paws...g.	Grip test:Grip mean (4paws) (g)	Grip test
 Grip.test.Grip.mean..g.	Grip test:Grip mean (g)	Grip test
 Grip.test.Grip.mean.ratio..g.g.	Grip test:Grip mean ratio (g/g)	Grip test
@@ -102,8 +108,6 @@ Haematology...Complete.blood.count..CBC.on.the.Advia.120..LUC....	Haematology - 
 Haematology...Complete.blood.count..CBC.on.the.Advia.120..LYMPHO....	Haematology - Complete blood count (CBC)on the Advia 120:%LYMPHO (%)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120..MONO....	Haematology - Complete blood count (CBC)on the Advia 120:%MONO (%)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120..NEUTRO....	Haematology - Complete blood count (CBC)on the Advia 120:%NEUTRO (%)	Haematology
-Haematology...Complete.blood.count..CBC.on.the.Advia.120.BASO..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:BASO (x10E03 cells/無)	Haematology
-Haematology...Complete.blood.count..CBC.on.the.Advia.120.BASO.BRUT..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:BASO BRUT (x10E03 cells/無)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.CHCM..g.dL.	Haematology - Complete blood count (CBC)on the Advia 120:CHCM (g/dL)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.CHDW..g.dL.	Haematology - Complete blood count (CBC)on the Advia 120:CHDW (g/dL)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.EOSINO..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:EOSINO (x10E03 cells/無)	Haematology
@@ -121,8 +125,11 @@ Haematology...Complete.blood.count..CBC.on.the.Advia.120.MCHC..g.dL.	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.MCV..fL.	Haematology - Complete blood count (CBC)on the Advia 120:MCV (fL)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.MONO..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:MONO (x10E03 cells/無)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.MONO.BRUT..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:MONO BRUT (x10E03 cells/無)	Haematology
+Haematology...Complete.blood.count..CBC.on.the.Advia.120.MPV..fL.	Haematology - Complete blood count (CBC)on the Advia 120:MPV (fL)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.NEUTRO..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:NEUTRO (x10E03 cells/無)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.NEUTRO.BRUT..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:NEUTRO BRUT (x10E03 cells/無)	Haematology
+Haematology...Complete.blood.count..CBC.on.the.Advia.120.PLT..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:PLT (x10E03 cells/無)	Haematology
+Haematology...Complete.blood.count..CBC.on.the.Advia.120.PLT.brut..x10E03.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:PLT brut (x10E03 cells/無)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.RBC..x10E06.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:RBC (x10E06 cells/無)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.RBC.brut..x10E06.cells.無.	Haematology - Complete blood count (CBC)on the Advia 120:RBC brut (x10E06 cells/無)	Haematology
 Haematology...Complete.blood.count..CBC.on.the.Advia.120.RDW....	Haematology - Complete blood count (CBC)on the Advia 120:RDW (%)	Haematology
@@ -198,8 +205,6 @@ Rotarod.test.Passive.rotation..T3.	Rotarod test:Passive rotation (T3)	Rotarod
 Rotarod.test.Trial.1..s.	Rotarod test:Trial 1 (s)	Rotarod
 Rotarod.test.Trial.2..s.	Rotarod test:Trial 2 (s)	Rotarod
 Rotarod.test.Trial.3..s.	Rotarod test:Trial 3 (s)	Rotarod
-Shock.threshold.test.Freq..jump	Shock threshold test:Freq. jump	Shock threshold
-Shock.threshold.test.Jump	Shock threshold test:Jump	Shock threshold
 Shock.threshold.test.Nb.cage	Shock threshold test:Nb/cage	Shock threshold
 Shock.threshold.test.Vocalization	Shock threshold test:Vocalization	Shock threshold
 Test.de.Tol廨ance.au.Glucose..GTT..Body.weight..g.	Test de Tol廨ance au Glucose (GTT):Body weight (g)	Glucose tolerance test

@@ -159,21 +159,28 @@ dat_proc_names.vc <- dat_proc_names.vc[keep_aggreg.vl]
 
 ## removing variables with > 20% NA (including 100% NA in females)
 ## or with variance = 0
-keep_notna_zerovar.vl <- ProMetIS:::.filter_na_zerovar(preclinic_dat.mn,
-                                                       na_thresh.n = 0.2)
+filtered.eset <- phenomis::filtering(Biobase::ExpressionSet(assayData = t(preclinic_dat.mn),
+                                                            phenoData = Biobase::AnnotatedDataFrame(data.frame(row.names = rownames(preclinic_dat.mn),
+                                                                                                               gene = substr(rownames(preclinic_dat.mn), 1, 1)))),
+                                     class.c = "gene",
+                                     dims.vc = "features")
+keep_notna_zerovar.vl <- colnames(preclinic_dat.mn) %in% Biobase::featureNames(filtered.eset)
 
-stopifnot(sum(keep_notna_zerovar.vl) == 233)
+# keep_notna_zerovar.vl <- ProMetIS:::.filter_na_zerovar(preclinic_dat.mn,
+#                                                        na_thresh.n = 0.2)
+
+stopifnot(sum(keep_notna_zerovar.vl) == 238)
 preclinic_dat.mn <- preclinic_dat.mn[, keep_notna_zerovar.vl]
 dat_proc_names.vc <- dat_proc_names.vc[keep_notna_zerovar.vl]
 
-stopifnot(identical(dim(preclinic_dat.mn), as.integer(c(42, 233))))
+stopifnot(identical(dim(preclinic_dat.mn), as.integer(c(42, 238))))
 ```
 
 
 ## variableMetadata
 
 ```{r preclinical_variableMetadata}
-# variableMetadata (233 * 3)
+# variableMetadata (238 * 3)
 category.vc <- sapply(colnames(preclinic_dat.mn),
                       function(name.c)
                         unlist(strsplit(name.c,
@@ -207,7 +214,7 @@ preclinic_fda.df <- data.frame(row.names = colnames(preclinic_dat.mn),
                                measurement = dat_proc_names.vc,
                                category = category.vc,
                                stringsAsFactors = FALSE)
-stopifnot(identical(dim(preclinic_fda.df), as.integer(c(233, 2))))
+stopifnot(identical(dim(preclinic_fda.df), as.integer(c(238, 2))))
 ```
 
 ## ExpressionSet
@@ -314,10 +321,6 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
   stopifnot(identical(rownames(proteo_pda.df),
                       sample_names.vc))
   
-  # var_select.vl <- colnames(proteo_pda.df) %in% ProMetIS:::.varLabels_first.ls()[[set.c]] 
-  # 
-  # colnames(proteo_pda.df)[!var_select.vl] <- paste0("supp_", colnames(proteo_pda.df))[!var_select.vl]
-  
   Biobase::pData(eset) <- proteo_pda.df
   stopifnot(methods::validObject(eset))
   
@@ -350,10 +353,6 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
                                                             split = "|",
                                                             fixed = TRUE))[2],
                                           USE.NAMES = FALSE)
-  
-  # supp.vi <- which(!(colnames(proteo_fda.df) %in% ProMetIS:::.fvarLabels_first.ls()[[set.c]]))
-  # colnames(proteo_fda.df)[supp.vi] <- paste0("supp_",
-  #                                            colnames(proteo_fda.df)[supp.vi])
   
   Biobase::fData(eset) <- proteo_fda.df
   stopifnot(methods::validObject(eset))
@@ -470,26 +469,6 @@ for (set.c in ProMetIS::proteo_sets.vc()) {
 }
 ```
 
-<!-- ## formatting the 'imputation' metrics -->
-
-<!-- ```{r proteo_imputation_metrics} -->
-<!-- proteomics_imputed.ls <- list() -->
-
-<!-- for (set.c in ProMetIS::proteo_sets.vc()) { -->
-
-<!--   eset <- proteo.mset[[set.c]] -->
-
-<!--   proteomics_imputed.ls[[set.c]] <- .format_imputation(eset) -->
-
-<!-- } -->
-
-<!-- save(proteomics_imputed.ls, -->
-<!--      file = file.path(gsub(ProMetIS::data_dir.c(), -->
-<!--                                  "../../ProMetIS/inst/extdata", -->
-<!--                                  ProMetIS::post_processed_dir.c()), -->
-<!--                       "proteomics_imputed.rdata")) -->
-<!-- ``` -->
-
 ## Variable metadata: including new mice ids in the column names (count, abundance, etc.)
 
 ```{r proteo_supp}
@@ -569,16 +548,16 @@ metabo.mset <- phenomis::reading(file.path(ProMetIS::processed_dir.c()),
 
 The workflow consists of the following steps:
 
-|step                |liver_c18hyper_pos |liver_hilic_neg    |plasma_c18hyper_pos|plasma_hilic_neg   |plasma_c18acqui_pos|plasma_c18acqui_neg|
-|--------------------|-------------------|-------------------|-------------------|-------------------|-------------------|-------------------|
-|0.4 <= RT <= 22     |                   |                   |                   |                   |         X         |         X         |
-|blank/samp   <= 0.33|         X         |         X         |         X         |         X         |         X         |         X         |
-|poolDil: cor >= 0.7 |         X         |         X         |         X         |         X         |                   |                   |
-|drift loess, span=1 |        none       |        none       |        pool       |        pool       |       sample      |       sample      |
-|NA <= 20% & var > 0 |         X         |         X         |         X         |         X         |         X         |         X         |
-|pool CV       <= 0.3|         X         |         X         |         X         |         X         |         X         |         X         |
-|poolCV/sampCV <= 1  |         X         |         X         |         X         |         X         |         X         |         X         |
-|corr, dRT, dmz      |         X         |         X         |         X         |         X         |         X         |         X         |
+|step                |liver_c18hypersil_pos |liver_hilic_neg    |plasma_c18hypersil_pos|plasma_hilic_neg   |plasma_c18acquity_pos|plasma_c18acquity_neg|
+|--------------------|----------------------|-------------------|----------------------|-------------------|---------------------|---------------------|
+|0.4 <= RT <= 22     |                      |                   |                      |                   |          X          |           X         |
+|blank/samp   <= 0.33|           X          |         X         |           X          |         X         |          X          |           X         |
+|poolDil: cor >= 0.7 |           X          |         X         |           X          |         X         |                     |                     |
+|drift loess, span=1 |          none        |        none       |          pool        |        pool       |        sample       |         sample      |
+|NA <= 20% & var > 0 |           X          |         X         |           X          |         X         |          X          |           X         |
+|pool CV       <= 0.3|           X          |         X         |           X          |         X         |          X          |           X         |
+|poolCV/sampCV <= 1  |           X          |         X         |           X          |         X         |          X          |           X         |
+|corr, dRT, dmz      |           X          |         X         |           X          |         X         |          X          |           X         |
 
 ```{r metabolomics_dataMatrix, message=FALSE, warning=FALSE}
 metabo.mset <- ProMetIS:::.metabo_postprocessing(metabo.mset = metabo.mset,

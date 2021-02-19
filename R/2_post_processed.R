@@ -123,7 +123,7 @@
     
     # NAs and variances
     
-    eset <- phenomis::filtering(eset, max_na_prop.n = 0.2)
+    eset <- phenomis::filtering(eset, class.c = ifelse(grepl("(hyper|hilic)", set.c), "KO", "Type"), max_na_prop.n = 0.2)
     
     if (!.technical_validation.l) {
       

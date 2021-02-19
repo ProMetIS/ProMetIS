@@ -1,3 +1,50 @@
+.irt_plot <- function(data.mn,
+                     tissue.c = c("liver", "plasma")[1]) {
+  
+  data.df <- as.data.frame(t(data.mn))
+  data.df[, "id"] <- 1:nrow(data.df)
+  
+  
+  # reshaping in the long format
+  plot_data.df <- reshape2::melt(data.df, id.var = "id")
+  
+  run.vc <- sapply(rownames(data.df),
+                   function(x)
+                     unlist(strsplit(unlist(strsplit(x, split = ".", fixed = TRUE))[1],
+                                     split = "_"))[1],
+                   USE.NAMES = FALSE)
+  
+  colnames(plot_data.df) <- gsub("variable", "peptides", colnames(plot_data.df))
+  
+  # plotting
+  p <- ggplot2::ggplot(plot_data.df,
+                       ggplot2::aes(x = id, y = value,
+                                    group = peptides,
+                                    colour = peptides)) +
+    ggplot2::geom_point() +
+    ggplot2::geom_line(ggplot2::aes(lty = peptides)) +
+    ggplot2::scale_color_manual(values = RColorBrewer::brewer.pal(12, "Paired")[-11]) +
+    # ggplot2::scale_color_brewer(palette = "Paired") +
+    ggplot2::theme_light() +
+    ggplot2::labs(title = tissue.c,
+                  x = "LC-MS run",
+                  y = "Retention time") +
+    ggplot2::theme(axis.text = ggplot2::element_text(size = 11, face = "bold"),
+                   axis.title = ggplot2::element_text(size = 11, face = "bold"),
+                   axis.text.x = ggplot2::element_text(angle = 90,
+                                                       size = 9,
+                                                       hjust = 1,
+                                                       vjust = 0.5),
+                   legend.title = ggplot2::element_text(face = "bold"),
+                   legend.text = ggplot2::element_text(face = "bold")) +
+    ggplot2::scale_x_continuous(breaks = 1:length(run.vc),
+                                labels = run.vc,
+                                name = "LC-MS run")
+  
+  return(invisible(p))
+  
+}
+
 .cv_ggplot <- function(data.tb,
                        title.c = "") {
   

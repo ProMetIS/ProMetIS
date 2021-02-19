@@ -91,9 +91,9 @@ for (gene.c in ProMetIS::genes.vc()) {
     for (sex.c in ProMetIS::sex.vc()) {
       
       protlivsex.eset <- ProMetIS::subsetting(protliv.eset,
-                                            set.c = "proteomics_liver",
-                                            genes.vc = c("WT", "LAT"),
-                                            sex.vc = sex.c)
+                                              set.c = "proteomics_liver",
+                                              genes.vc = c("WT", "LAT"),
+                                              sex.vc = sex.c)
       
       protlivsex.eset <- phenomis::hypotesting(protlivsex.eset,
                                                test.c = "limma",
@@ -131,9 +131,9 @@ for (gene.c in ProMetIS::genes.vc()) {
       protlivgene.eset <- protliv.eset[, Biobase::pData(protliv.eset)[, "gene"] == gene.c]
       
       protlivgene.eset <- ProMetIS::subsetting(protlivgene.eset,
-                                             set.c = "proteomics_liver",
-                                             genes.vc = gene.c,
-                                             sex.vc = ProMetIS::sex.vc())
+                                               set.c = "proteomics_liver",
+                                               genes.vc = gene.c,
+                                               sex.vc = ProMetIS::sex.vc())
       
       protlivgene.eset <- phenomis::hypotesting(protlivgene.eset,
                                                 test.c = "limma",

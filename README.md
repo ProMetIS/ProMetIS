@@ -15,6 +15,10 @@ The package can be installed from github with `devtools::install_github("ProMetI
 Alyssa Imbert, Florence Castelli, Magali Rompais, Mohammed Selloum, Emmanuelle Mouton-Barbosa, Thomas Burger, Marion Brandolini-Bunlon, Arthur Tenenhaus, Yves Vandenbrouck, Olivier Sand, Pierrick Roger, Natacha Lenuzza, Emeline Chu-Van, Charlotte Joly, Julia Novion Ducassou, Tania Sorg, Bernard Malissen, Christophe Bruley, Laurent Vasseur, Aurélie Hirschler, Yohann Couté, David Bouyssié, Marie Courçon, Odile Schiltz, Virginie Brun, Jérôme Garin, Claudine Médigue, Christophe Junot, David Vallenet, Anne Gonzalez-de-Peredo, Myriam Ferro, Estelle Pujos-Guillot, Yann Herault, Christine Carapito, François Fenaille and Etienne A. Thévenot (ProMetIS consortium)
 ![](vignettes/figures/prometis_logo.png)
 
+## Maintainers
+
+Alyssa Imbert and Etienne A. Thévenot
+
 ## Experimental design
 
 ![](vignettes/figures/phenomin_design.png)

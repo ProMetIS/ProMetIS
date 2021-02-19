@@ -1915,7 +1915,7 @@ function toggle_visibility(id1) {
 
 <h1 class="title toc-ignore">Post-processing</h1>
 <p class="author-name">Alyssa Imbert and Etienne A. Thévenot (ProMetIS consortium)</p>
-<h4 class="date">26 janvier 2021</h4>
+<h4 class="date">19 février 2021</h4>
 
 </div>
 
@@ -2048,18 +2048,26 @@ dat_proc_names.vc &lt;- dat_proc_names.vc[keep_aggreg.vl]
 
 ## removing variables with &gt; 20% NA (including 100% NA in females)
 ## or with variance = 0
-keep_notna_zerovar.vl &lt;- ProMetIS:::.filter_na_zerovar(preclinic_dat.mn,
-                                                       na_thresh.n = 0.2)
+filtered.eset &lt;- phenomis::filtering(Biobase::ExpressionSet(assayData = t(preclinic_dat.mn),
+                                                            phenoData = Biobase::AnnotatedDataFrame(data.frame(row.names = rownames(preclinic_dat.mn),
+                                                                                                               gene = substr(rownames(preclinic_dat.mn), 1, 1)))),
+                                     class.c = &quot;gene&quot;,
+                                     dims.vc = &quot;features&quot;)</code></pre>
+<pre><code>## Discarded 354 features: Anapath...E2.spleen, Anapath...I8.testis, Anapath...I8c.testis..right., Anapath...I8d.testis..left., Anapath.E2.spleen..g., Anapath.I8.testis..g., Anapath.I8c.testis..right...g., Anapath.I8d.testis..left...g., Anapath.Tibia.length..mm., Auditory.brainstem.response.ABR.threshold.12.khz..dB.SPL., Auditory.brainstem.response.ABR.threshold.18.khz..dB.SPL., Auditory.brainstem.response.ABR.threshold.24.khz..dB.SPL., Auditory.brainstem.response.ABR.threshold.30.khz..dB.SPL., Auditory.brainstem.response.ABR.threshold.6.khz..dB.SPL., Auditory.brainstem.response.Body.weight..g., Dysmorphology.IMPC.Vibrissae...presence, Eye.Morphology.Fusion.between.cornea.and.lens, Eye.Morphology.Iris.Pigmentation, Eye.Morphology.Iris.transilumination, Eye.Morphology.Iris.Pupil, Eye.Morphology.Lens, Eye.Morphology.Lens.Opacity, Eye.Morphology.Pupil.Dilation, Eye.Morphology.Pupil.Light.Response, Eye.Morphology.Pupil.Position, Eye.Morphology.Pupil.Shape, Eye.Morphology.Synechia, Haematology...Complete.blood.count..CBC.on.the.Advia.120.BASO..x10E03.cells.µL., Haematology...Complete.blood.count..CBC.on.the.Advia.120.BASO.BRUT..x10E03.cells.µL., Imagerie.du.squelette.par.rayons.X.Tibia.Length..mm., Indirect.calorimetry.TSE.Body.weight.after..g., Indirect.calorimetry.TSE.Body.weight.before..g., Indirect.calorimetry.TSE.Cumulative.Food...10..g., Indirect.calorimetry.TSE.Cumulative.Food...11..g., Indirect.calorimetry.TSE.Cumulative.Food...12..g., Indirect.calorimetry.TSE.Cumulative.Food...13..g., Indirect.calorimetry.TSE.Cumulative.Food...14..g., Indirect.calorimetry.TSE.Cumulative.Food...15..g., Indirect.calorimetry.TSE.Cumulative.Food...16..g., Indirect.calorimetry.TSE.Cumulative.Food...17..g., Indirect.calorimetry.TSE.Cumulative.Food...18..g., Indirect.calorimetry.TSE.Cumulative.Food...19..g., Indirect.calorimetry.TSE.Cumulative.Food...2..g., Indirect.calorimetry.TSE.Cumulative.Food...20..g., Indirect.calorimetry.TSE.Cumulative.Food...21..g., Indirect.calorimetry.TSE.Cumulative.Food...22..g., Indirect.calorimetry.TSE.Cumulative.Food...3..g., Indirect.calorimetry.TSE.Cumulative.Food...4..g., Indirect.calorimetry.TSE.Cumulative.Food...5..g., Indirect.calorimetry.TSE.Cumulative.Food...6..g., Indirect.calorimetry.TSE.Cumulative.Food...7..g., Indirect.calorimetry.TSE.Cumulative.Food...8..g., Indirect.calorimetry.TSE.Cumulative.Food...9..g., Indirect.calorimetry.TSE.Delta.body.weight..g., Indirect.calorimetry.TSE.Drink...0..ml., Indirect.calorimetry.TSE.Drink...1..ml., Indirect.calorimetry.TSE.Drink...10..ml., Indirect.calorimetry.TSE.Drink...11..ml., Indirect.calorimetry.TSE.Drink...12..ml., Indirect.calorimetry.TSE.Drink...13..ml., Indirect.calorimetry.TSE.Drink...14..ml., Indirect.calorimetry.TSE.Drink...15..ml., Indirect.calorimetry.TSE.Drink...16..ml., Indirect.calorimetry.TSE.Drink...17..ml., Indirect.calorimetry.TSE.Drink...18..ml., Indirect.calorimetry.TSE.Drink...19..ml., Indirect.calorimetry.TSE.Drink...2..ml., Indirect.calorimetry.TSE.Drink...20..ml., Indirect.calorimetry.TSE.Drink...21..ml., Indirect.calorimetry.TSE.Drink...22..ml., Indirect.calorimetry.TSE.Drink...3..ml., Indirect.calorimetry.TSE.Drink...4..ml., Indirect.calorimetry.TSE.Drink...5..ml., Indirect.calorimetry.TSE.Drink...6..ml., Indirect.calorimetry.TSE.Drink...7..ml., Indirect.calorimetry.TSE.Drink...8..ml., Indirect.calorimetry.TSE.Drink...9..ml., Indirect.calorimetry.TSE.Drink.cumulative.day..ml., Indirect.calorimetry.TSE.Drink.cumulative.night..ml., Indirect.calorimetry.TSE.Food...0..g., Indirect.calorimetry.TSE.Food...1..g., Indirect.calorimetry.TSE.Food...10..g., Indirect.calorimetry.TSE.Food...11..g., Indirect.calorimetry.TSE.Food...12..g., Indirect.calorimetry.TSE.Food...13..g., Indirect.calorimetry.TSE.Food...14..g., Indirect.calorimetry.TSE.Food...15..g., Indirect.calorimetry.TSE.Food...16..g., Indirect.calorimetry.TSE.Food...17..g., Indirect.calorimetry.TSE.Food...18..g., Indirect.calorimetry.TSE.Food...19..g., Indirect.calorimetry.TSE.Food...2..g., Indirect.calorimetry.TSE.Food...20..g., Indirect.calorimetry.TSE.Food...21..g., Indirect.calorimetry.TSE.Food...22..g., Indirect.calorimetry.TSE.Food...3..g., Indirect.calorimetry.TSE.Food...4..g., Indirect.calorimetry.TSE.Food...5..g., Indirect.calorimetry.TSE.Food...6..g., Indirect.calorimetry.TSE.Food...7..g., Indirect.calorimetry.TSE.Food...8..g., Indirect.calorimetry.TSE.Food...9..g., Indirect.calorimetry.TSE.Food.cumulative.day..g., Indirect.calorimetry.TSE.Food.cumulative.night..g., Indirect.calorimetry.TSE.Heat...0..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...1..KJ.h.animal., Indirect.calorimetry.TSE.Heat...1..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...1..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...10..KJ.h.animal., Indirect.calorimetry.TSE.Heat...10..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...10..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...11..KJ.h.animal., Indirect.calorimetry.TSE.Heat...11..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...11..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...12..KJ.h.animal., Indirect.calorimetry.TSE.Heat...12..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...12..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...13..KJ.h.animal., Indirect.calorimetry.TSE.Heat...13..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...13..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...14..KJ.h.animal., Indirect.calorimetry.TSE.Heat...14..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...14..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...15..KJ.h.animal., Indirect.calorimetry.TSE.Heat...15..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...15..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...16..KJ.h.animal., Indirect.calorimetry.TSE.Heat...16..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...16..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...17..KJ.h.animal., Indirect.calorimetry.TSE.Heat...17..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...17..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...18..KJ.h.animal., Indirect.calorimetry.TSE.Heat...18..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...18..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...19..KJ.h.animal., Indirect.calorimetry.TSE.Heat...19..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...19..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...2..KJ.h.animal., Indirect.calorimetry.TSE.Heat...2..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...2..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...20..KJ.h.animal., Indirect.calorimetry.TSE.Heat...20..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...20..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...21..KJ.h.animal., Indirect.calorimetry.TSE.Heat...21..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...21..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...22..KJ.h.animal., Indirect.calorimetry.TSE.Heat...22..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...22..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...3..KJ.h.animal., Indirect.calorimetry.TSE.Heat...3..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...3..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...4..KJ.h.animal., Indirect.calorimetry.TSE.Heat...4..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...4..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...5..KJ.h.animal., Indirect.calorimetry.TSE.Heat...5..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...5..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...6..KJ.h.animal., Indirect.calorimetry.TSE.Heat...6..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...6..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...7..KJ.h.animal., Indirect.calorimetry.TSE.Heat...7..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...7..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...8..KJ.h.animal., Indirect.calorimetry.TSE.Heat...8..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...8..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat...9..KJ.h.animal., Indirect.calorimetry.TSE.Heat...9..Kcal.h.animal., Indirect.calorimetry.TSE.Heat...9..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat.mean.day..KJ.h.animal., Indirect.calorimetry.TSE.Heat.mean.day..Kcal.h.animal., Indirect.calorimetry.TSE.Heat.mean.day..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.Heat.mean.night..KJ.h.animal., Indirect.calorimetry.TSE.Heat.mean.night..Kcal.h.animal., Indirect.calorimetry.TSE.Heat.mean.night..Kcal.kg.0.75.h., Indirect.calorimetry.TSE.RER...0, Indirect.calorimetry.TSE.RER...1, Indirect.calorimetry.TSE.RER...10, Indirect.calorimetry.TSE.RER...11, Indirect.calorimetry.TSE.RER...12, Indirect.calorimetry.TSE.RER...13, Indirect.calorimetry.TSE.RER...14, Indirect.calorimetry.TSE.RER...15, Indirect.calorimetry.TSE.RER...16, Indirect.calorimetry.TSE.RER...17, Indirect.calorimetry.TSE.RER...18, Indirect.calorimetry.TSE.RER...19, Indirect.calorimetry.TSE.RER...2, Indirect.calorimetry.TSE.RER...20, Indirect.calorimetry.TSE.RER...21, Indirect.calorimetry.TSE.RER...22, Indirect.calorimetry.TSE.RER...3, Indirect.calorimetry.TSE.RER...4, Indirect.calorimetry.TSE.RER...5, Indirect.calorimetry.TSE.RER...6, Indirect.calorimetry.TSE.RER...7, Indirect.calorimetry.TSE.RER...8, Indirect.calorimetry.TSE.RER...9, Indirect.calorimetry.TSE.RER.mean.day, Indirect.calorimetry.TSE.RER.mean.night, Indirect.calorimetry.TSE.Total.Drink.intake..ml., Indirect.calorimetry.TSE.Total.Food.intake..g., Indirect.calorimetry.TSE.VCO2...0..ml.h.animal., Indirect.calorimetry.TSE.VCO2...1..ml.h.animal., Indirect.calorimetry.TSE.VCO2...1..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...10..ml.h.animal., Indirect.calorimetry.TSE.VCO2...10..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...11..ml.h.animal., Indirect.calorimetry.TSE.VCO2...11..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...12..ml.h.animal., Indirect.calorimetry.TSE.VCO2...12..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...13..ml.h.animal., Indirect.calorimetry.TSE.VCO2...13..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...14..ml.h.animal., Indirect.calorimetry.TSE.VCO2...14..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...15..ml.h.animal., Indirect.calorimetry.TSE.VCO2...15..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...16..ml.h.animal., Indirect.calorimetry.TSE.VCO2...16..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...17..ml.h.animal., Indirect.calorimetry.TSE.VCO2...17..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...18..ml.h.animal., Indirect.calorimetry.TSE.VCO2...18..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...19..ml.h.animal., Indirect.calorimetry.TSE.VCO2...19..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...2..ml.h.animal., Indirect.calorimetry.TSE.VCO2...2..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...20..ml.h.animal., Indirect.calorimetry.TSE.VCO2...20..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...21..ml.h.animal., Indirect.calorimetry.TSE.VCO2...21..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...22..ml.h.animal., Indirect.calorimetry.TSE.VCO2...22..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...3..ml.h.animal., Indirect.calorimetry.TSE.VCO2...3..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...4..ml.h.animal., Indirect.calorimetry.TSE.VCO2...4..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...5..ml.h.animal., Indirect.calorimetry.TSE.VCO2...5..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...6..ml.h.animal., Indirect.calorimetry.TSE.VCO2...6..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...7..ml.h.animal., Indirect.calorimetry.TSE.VCO2...7..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...8..ml.h.animal., Indirect.calorimetry.TSE.VCO2...8..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2...9..ml.h.animal., Indirect.calorimetry.TSE.VCO2...9..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2.mean.day..ml.h.animal., Indirect.calorimetry.TSE.VCO2.mean.day..ml.kg.0.75.h., Indirect.calorimetry.TSE.VCO2.mean.night..ml.h.animal., Indirect.calorimetry.TSE.VCO2.mean.night..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...0..ml.h.animal., Indirect.calorimetry.TSE.VO2...1..ml.h.animal., Indirect.calorimetry.TSE.VO2...1..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...10..ml.h.animal., Indirect.calorimetry.TSE.VO2...10..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...11..ml.h.animal., Indirect.calorimetry.TSE.VO2...11..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...12..ml.h.animal., Indirect.calorimetry.TSE.VO2...12..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...13..ml.h.animal., Indirect.calorimetry.TSE.VO2...13..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...14..ml.h.animal., Indirect.calorimetry.TSE.VO2...14..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...15..ml.h.animal., Indirect.calorimetry.TSE.VO2...15..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...16..ml.h.animal., Indirect.calorimetry.TSE.VO2...16..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...17..ml.h.animal., Indirect.calorimetry.TSE.VO2...17..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...18..ml.h.animal., Indirect.calorimetry.TSE.VO2...18..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...19..ml.h.animal., Indirect.calorimetry.TSE.VO2...19..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...2..ml.h.animal., Indirect.calorimetry.TSE.VO2...2..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...20..ml.h.animal., Indirect.calorimetry.TSE.VO2...20..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...21..ml.h.animal., Indirect.calorimetry.TSE.VO2...21..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...22..ml.h.animal., Indirect.calorimetry.TSE.VO2...22..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...3..ml.h.animal., Indirect.calorimetry.TSE.VO2...3..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...4..ml.h.animal., Indirect.calorimetry.TSE.VO2...4..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...5..ml.h.animal., Indirect.calorimetry.TSE.VO2...5..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...6..ml.h.animal., Indirect.calorimetry.TSE.VO2...6..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...7..ml.h.animal., Indirect.calorimetry.TSE.VO2...7..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...8..ml.h.animal., Indirect.calorimetry.TSE.VO2...8..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2...9..ml.h.animal., Indirect.calorimetry.TSE.VO2...9..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2.mean.day..ml.h.animal., Indirect.calorimetry.TSE.VO2.mean.day..ml.kg.0.75.h., Indirect.calorimetry.TSE.VO2.mean.night..ml.h.animal., Indirect.calorimetry.TSE.VO2.mean.night..ml.kg.0.75.h., Indirect.calorimetry.TSE.XAMB...0, Indirect.calorimetry.TSE.XAMB...1, Indirect.calorimetry.TSE.XAMB...10, Indirect.calorimetry.TSE.XAMB...11, Indirect.calorimetry.TSE.XAMB...12, Indirect.calorimetry.TSE.XAMB...13, Indirect.calorimetry.TSE.XAMB...14, Indirect.calorimetry.TSE.XAMB...15, Indirect.calorimetry.TSE.XAMB...16, Indirect.calorimetry.TSE.XAMB...17, Indirect.calorimetry.TSE.XAMB...18, Indirect.calorimetry.TSE.XAMB...19, Indirect.calorimetry.TSE.XAMB...2, Indirect.calorimetry.TSE.XAMB...20, Indirect.calorimetry.TSE.XAMB...21, Indirect.calorimetry.TSE.XAMB...22, Indirect.calorimetry.TSE.XAMB...3, Indirect.calorimetry.TSE.XAMB...4, Indirect.calorimetry.TSE.XAMB...5, Indirect.calorimetry.TSE.XAMB...6, Indirect.calorimetry.TSE.XAMB...7, Indirect.calorimetry.TSE.XAMB...8, Indirect.calorimetry.TSE.XAMB...9, Indirect.calorimetry.TSE.XAMB.cumulative.day, Indirect.calorimetry.TSE.XAMB.cumulative.night, Indirect.calorimetry.TSE.XTOT...0, Indirect.calorimetry.TSE.XTOT...1, Indirect.calorimetry.TSE.XTOT...10, Indirect.calorimetry.TSE.XTOT...11, Indirect.calorimetry.TSE.XTOT...12, Indirect.calorimetry.TSE.XTOT...13, Indirect.calorimetry.TSE.XTOT...14, Indirect.calorimetry.TSE.XTOT...15, Indirect.calorimetry.TSE.XTOT...16, Indirect.calorimetry.TSE.XTOT...17, Indirect.calorimetry.TSE.XTOT...18, Indirect.calorimetry.TSE.XTOT...19, Indirect.calorimetry.TSE.XTOT...2, Indirect.calorimetry.TSE.XTOT...20, Indirect.calorimetry.TSE.XTOT...21, Indirect.calorimetry.TSE.XTOT...22, Indirect.calorimetry.TSE.XTOT...3, Indirect.calorimetry.TSE.XTOT...4, Indirect.calorimetry.TSE.XTOT...5, Indirect.calorimetry.TSE.XTOT...6, Indirect.calorimetry.TSE.XTOT...7, Indirect.calorimetry.TSE.XTOT...8, Indirect.calorimetry.TSE.XTOT...9, Indirect.calorimetry.TSE.XTOT.cumulative.day, Indirect.calorimetry.TSE.XTOT.cumulative.night, Shock.threshold.test.Freq..jump, Shock.threshold.test.Jump</code></pre>
+<pre class="r"><code>keep_notna_zerovar.vl &lt;- colnames(preclinic_dat.mn) %in% Biobase::featureNames(filtered.eset)
 
-stopifnot(sum(keep_notna_zerovar.vl) == 233)
+# keep_notna_zerovar.vl &lt;- ProMetIS:::.filter_na_zerovar(preclinic_dat.mn,
+#                                                        na_thresh.n = 0.2)
+
+stopifnot(sum(keep_notna_zerovar.vl) == 238)
 preclinic_dat.mn &lt;- preclinic_dat.mn[, keep_notna_zerovar.vl]
 dat_proc_names.vc &lt;- dat_proc_names.vc[keep_notna_zerovar.vl]
 
-stopifnot(identical(dim(preclinic_dat.mn), as.integer(c(42, 233))))</code></pre>
+stopifnot(identical(dim(preclinic_dat.mn), as.integer(c(42, 238))))</code></pre>
 </div>
 <div id="variablemetadata" class="section level2">
 <h2><span class="header-section-number">2.4</span> variableMetadata</h2>
-<pre class="r"><code># variableMetadata (233 * 3)
+<pre class="r"><code># variableMetadata (238 * 3)
 category.vc &lt;- sapply(colnames(preclinic_dat.mn),
                       function(name.c)
                         unlist(strsplit(name.c,
@@ -2093,7 +2101,7 @@ preclinic_fda.df &lt;- data.frame(row.names = colnames(preclinic_dat.mn),
                                measurement = dat_proc_names.vc,
                                category = category.vc,
                                stringsAsFactors = FALSE)
-stopifnot(identical(dim(preclinic_fda.df), as.integer(c(233, 2))))</code></pre>
+stopifnot(identical(dim(preclinic_fda.df), as.integer(c(238, 2))))</code></pre>
 </div>
 <div id="expressionset" class="section level2">
 <h2><span class="header-section-number">2.5</span> ExpressionSet</h2>
@@ -2109,7 +2117,7 @@ preclinical.eset &lt;- ProMetIS:::metadata_select(preclinical.eset, step.c = &qu
 ## ../inst/extdata/2_post_processed/metadata_supp.rdata</code></pre>
 <pre class="r"><code>print(preclinical.eset)</code></pre>
 <pre><code>## ExpressionSet (storageMode: lockedEnvironment)
-## assayData: 233 features, 42 samples 
+## assayData: 238 features, 42 samples 
 ##   element names: exprs 
 ## protocolData: none
 ## phenoData
@@ -2119,7 +2127,7 @@ preclinical.eset &lt;- ProMetIS:::metadata_select(preclinical.eset, step.c = &qu
 ## featureData
 ##   featureNames: Anapath...A2.heart Anapath.A2.heart..g. ...
 ##     Ultrafocus...Densitométrie.osseuse.et.composition.corporelle.total.weight..g.
-##     (233 total)
+##     (238 total)
 ##   fvarLabels: measurement category
 ##   fvarMetadata: labelDescription
 ## experimentData: use &#39;experimentData(object)&#39;
@@ -2209,10 +2217,6 @@ proteo.mset &lt;- MultiDataSet::createMultiDataSet()</code></pre>
   stopifnot(identical(rownames(proteo_pda.df),
                       sample_names.vc))
   
-  # var_select.vl &lt;- colnames(proteo_pda.df) %in% ProMetIS:::.varLabels_first.ls()[[set.c]] 
-  # 
-  # colnames(proteo_pda.df)[!var_select.vl] &lt;- paste0(&quot;supp_&quot;, colnames(proteo_pda.df))[!var_select.vl]
-  
   Biobase::pData(eset) &lt;- proteo_pda.df
   stopifnot(methods::validObject(eset))
   
@@ -2243,10 +2247,6 @@ proteo.mset &lt;- MultiDataSet::createMultiDataSet()</code></pre>
                                                             split = &quot;|&quot;,
                                                             fixed = TRUE))[2],
                                           USE.NAMES = FALSE)
-  
-  # supp.vi &lt;- which(!(colnames(proteo_fda.df) %in% ProMetIS:::.fvarLabels_first.ls()[[set.c]]))
-  # colnames(proteo_fda.df)[supp.vi] &lt;- paste0(&quot;supp_&quot;,
-  #                                            colnames(proteo_fda.df)[supp.vi])
   
   Biobase::fData(eset) &lt;- proteo_fda.df
   stopifnot(methods::validObject(eset))
@@ -2356,19 +2356,6 @@ proteo.mset &lt;- MultiDataSet::createMultiDataSet()</code></pre>
                                         warnings = FALSE)
   
 }</code></pre>
-<!-- ## formatting the 'imputation' metrics -->
-<!-- ```{r proteo_imputation_metrics} -->
-<!-- proteomics_imputed.ls <- list() -->
-<!-- for (set.c in ProMetIS::proteo_sets.vc()) { -->
-<!--   eset <- proteo.mset[[set.c]] -->
-<!--   proteomics_imputed.ls[[set.c]] <- .format_imputation(eset) -->
-<!-- } -->
-<!-- save(proteomics_imputed.ls, -->
-<!--      file = file.path(gsub(ProMetIS::data_dir.c(), -->
-<!--                                  "../../ProMetIS/inst/extdata", -->
-<!--                                  ProMetIS::post_processed_dir.c()), -->
-<!--                       "proteomics_imputed.rdata")) -->
-<!-- ``` -->
 </div>
 <div id="variable-metadata-including-new-mice-ids-in-the-column-names-count-abundance-etc." class="section level2">
 <h2><span class="header-section-number">3.7</span> Variable metadata: including new mice ids in the column names (count, abundance, etc.)</h2>
@@ -2449,25 +2436,25 @@ proteo.mset &lt;- MultiDataSet::createMultiDataSet()</code></pre>
 <div id="normalization-of-the-datamatrix" class="section level2">
 <h2><span class="header-section-number">4.2</span> Normalization of the dataMatrix</h2>
 <p>The workflow consists of the following steps:</p>
-<div class='horizontal-scroll'><table style="width:100%;">
+<div class='horizontal-scroll'><table>
 <colgroup>
-<col width="14%"></col>
-<col width="14%"></col>
-<col width="14%"></col>
-<col width="14%"></col>
-<col width="14%"></col>
+<col width="13%"></col>
+<col width="15%"></col>
+<col width="13%"></col>
+<col width="15%"></col>
+<col width="13%"></col>
 <col width="14%"></col>
 <col width="14%"></col>
 </colgroup>
 <thead>
 <tr class="header">
 <th>step</th>
-<th>liver_c18hyper_pos</th>
+<th>liver_c18hypersil_pos</th>
 <th>liver_hilic_neg</th>
-<th>plasma_c18hyper_pos</th>
+<th>plasma_c18hypersil_pos</th>
 <th>plasma_hilic_neg</th>
-<th>plasma_c18acqui_pos</th>
-<th>plasma_c18acqui_neg</th>
+<th>plasma_c18acquity_pos</th>
+<th>plasma_c18acquity_neg</th>
 </tr>
 </thead>
 <tbody>
@@ -2499,13 +2486,13 @@ proteo.mset &lt;- MultiDataSet::createMultiDataSet()</code></pre>
 <td></td>
 </tr>
 <tr class="even">
-<td>drift samp, span = 2</td>
-<td>X</td>
-<td>X</td>
-<td>X</td>
-<td>X</td>
-<td>X</td>
-<td>X</td>
+<td>drift loess, span=1</td>
+<td>none</td>
+<td>none</td>
+<td>pool</td>
+<td>pool</td>
+<td>sample</td>
+<td>sample</td>
 </tr>
 <tr class="odd">
 <td>NA &lt;= 20% &amp; var &gt; 0</td>
@@ -2545,14 +2532,14 @@ proteo.mset &lt;- MultiDataSet::createMultiDataSet()</code></pre>
 </tr>
 </tbody>
 </table></div>
-<pre class="r"><code>metabo.mset &lt;- ProMetIS:::metabo_postprocessing(metabo.mset = metabo.mset,
-                                                drift_correct.c = &quot;sample&quot;)</code></pre>
-<pre><code>## [1] &quot;metabolomics_liver_c18hyper_pos&quot;
+<pre class="r"><code>metabo.mset &lt;- ProMetIS:::.metabo_postprocessing(metabo.mset = metabo.mset,
+                                                 drift_correct.c = &quot;prometis&quot;)</code></pre>
+<pre><code>## [1] &quot;metabolomics_liver_c18hypersil_pos&quot;
 ## [1] &quot;metabolomics_liver_hilic_neg&quot;
-## [1] &quot;metabolomics_plasma_c18hyper_pos&quot;
+## [1] &quot;metabolomics_plasma_c18hypersil_pos&quot;
 ## [1] &quot;metabolomics_plasma_hilic_neg&quot;
-## [1] &quot;metabolomics_plasma_c18acqui_pos&quot;
-## [1] &quot;metabolomics_plasma_c18acqui_neg&quot;</code></pre>
+## [1] &quot;metabolomics_plasma_c18acquity_pos&quot;
+## [1] &quot;metabolomics_plasma_c18acquity_neg&quot;</code></pre>
 </div>
 <div id="formatting-and-ordering-sample-names" class="section level2">
 <h2><span class="header-section-number">4.3</span> Formatting and ordering sample names</h2>
@@ -2591,29 +2578,29 @@ proteo.mset &lt;- MultiDataSet::createMultiDataSet()</code></pre>
   
 }</code></pre>
 <pre><code>## The following file(s) have been written:
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_c18hyper_pos/dataMatrix.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_c18hyper_pos/sampleMetadata.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_c18hyper_pos/variableMetadata.tsv</code></pre>
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_c18hypersil_pos/dataMatrix.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_c18hypersil_pos/sampleMetadata.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_c18hypersil_pos/variableMetadata.tsv</code></pre>
 <pre><code>## The following file(s) have been written:
 ## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_hilic_neg/dataMatrix.tsv
 ## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_hilic_neg/sampleMetadata.tsv
 ## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_liver_hilic_neg/variableMetadata.tsv</code></pre>
 <pre><code>## The following file(s) have been written:
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18hyper_pos/dataMatrix.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18hyper_pos/sampleMetadata.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18hyper_pos/variableMetadata.tsv</code></pre>
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18hypersil_pos/dataMatrix.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18hypersil_pos/sampleMetadata.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18hypersil_pos/variableMetadata.tsv</code></pre>
 <pre><code>## The following file(s) have been written:
 ## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_hilic_neg/dataMatrix.tsv
 ## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_hilic_neg/sampleMetadata.tsv
 ## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_hilic_neg/variableMetadata.tsv</code></pre>
 <pre><code>## The following file(s) have been written:
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acqui_pos/dataMatrix.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acqui_pos/sampleMetadata.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acqui_pos/variableMetadata.tsv</code></pre>
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acquity_pos/dataMatrix.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acquity_pos/sampleMetadata.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acquity_pos/variableMetadata.tsv</code></pre>
 <pre><code>## The following file(s) have been written:
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acqui_neg/dataMatrix.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acqui_neg/sampleMetadata.tsv
-## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acqui_neg/variableMetadata.tsv</code></pre>
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acquity_neg/dataMatrix.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acquity_neg/sampleMetadata.tsv
+## ../../ProMetIS/inst/extdata/2_post_processed/metabolomics_plasma_c18acquity_neg/variableMetadata.tsv</code></pre>
 </div>
 </div>
 

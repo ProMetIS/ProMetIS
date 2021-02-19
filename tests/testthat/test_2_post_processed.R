@@ -23,13 +23,13 @@ testthat::test_that("dimensions", {
   #             apply(post_proc_dim.mn, 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_dim.vc <- c("metabolomics_liver_c18hyper_pos|6287|42",
-                   "metabolomics_liver_hilic_neg|3145|42",
-                   "metabolomics_plasma_c18acqui_neg|2088|42",
-                   "metabolomics_plasma_c18acqui_pos|8542|42",
-                   "metabolomics_plasma_c18hyper_pos|4789|42",
-                   "metabolomics_plasma_hilic_neg|3133|42",
-                   "preclinical|231|42",
+  test_dim.vc <- c("metabolomics_liver_c18hypersil_pos|5665|42",
+                   "metabolomics_liver_hilic_neg|2866|42",
+                   "metabolomics_plasma_c18acquity_neg|1584|42",
+                   "metabolomics_plasma_c18acquity_pos|6104|42",
+                   "metabolomics_plasma_c18hypersil_pos|4788|42",
+                   "metabolomics_plasma_hilic_neg|3131|42",
+                   "preclinical|236|42",
                    "proteomics_liver|2187|42",
                    "proteomics_plasma|446|36")
   test_dim.mn <- sapply(test_dim.vc, function(x) unlist(strsplit(x, "|", fixed = TRUE))[c(2, 3)])

@@ -122,9 +122,21 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
                            overimputed = NA_integer_)
             
             # NAs <= 20% and variance >= 1e-5
-            na_zerovar_sel.vl <- ProMetIS:::.filter_na_zerovar(t(Biobase::exprs(x)),
-                                                               na_thresh.n = na_thresh.n,
-                                                               var_thresh.n = var_thresh.n)
+            if (length(genes.vc) > 1) {
+              class.c <- "gene"
+            } else if (length(sex.vc) > 1) {
+              class.c <- "sex"
+            } else
+              stop("Only a single gene and sex selected.")
+            filtered.eset <- phenomis::filtering(x,
+                                                 class.c = class.c,
+                                                 max_na_prop.n = na_thresh.n,
+                                                 min_variance.n = var_thresh.n)
+            na_zerovar_sel.vl <- Biobase::featureNames(x) %in% Biobase::featureNames(filtered.eset)
+            
+            # na_zerovar_sel.vl <- ProMetIS:::.filter_na_zerovar(t(Biobase::exprs(x)),
+            #                                                    na_thresh.n = na_thresh.n,
+            #                                                    var_thresh.n = var_thresh.n)
             
             filter.vi["nas_zerovar"] <- sum(!na_zerovar_sel.vl)
             
@@ -157,31 +169,32 @@ setMethod("subsetting", signature(x = "ExpressionSet"),
           })
 
 
-.filter_na_zerovar <- function(input.mn,
-                               na_thresh.n = 0.2,
-                               var_thresh.n = .Machine$double.eps) {
-  
-  # removing variables with > 20% NA (including 100% NA in females)
-  feat_na.vn <- apply(input.mn, 2, function(feat.vn)
-    sum(is.na(feat.vn)) / length(feat.vn))
-  feat_notna.vl <- feat_na.vn <= na_thresh.n
-  # sum(feat_notna.vl)
-  
-  # removing variables with variance < 1e-5
-  feat_var.vn <- apply(input.mn, 2, function(feat.vn)
-    var(feat.vn, na.rm = TRUE))
-  feat_notzerovar.vl <- !is.na(feat_var.vn) &
-    (feat_var.vn >= var_thresh.n)
-  # sum(feat_notzerovar.vl)
-  
-  feat_sel.vl <- feat_notna.vl & feat_notzerovar.vl
-  
-  stopifnot(length(feat_sel.vl) == ncol(input.mn) &&
-              !any(is.na(feat_sel.vl)))
-  
-  feat_sel.vl
-  
-}
+# .filter_na_zerovar <- function(input.mn,
+#                                class.c = "",
+#                                na_thresh.n = 0.2,
+#                                var_thresh.n = .Machine$double.eps) {
+#   
+#   # removing variables with > 20% NA (including 100% NA in females)
+#   feat_na.vn <- apply(input.mn, 2, function(feat.vn)
+#     sum(is.na(feat.vn)) / length(feat.vn))
+#   feat_notna.vl <- feat_na.vn <= na_thresh.n
+#   # sum(feat_notna.vl)
+#   
+#   # removing variables with variance < 1e-5
+#   feat_var.vn <- apply(input.mn, 2, function(feat.vn)
+#     var(feat.vn, na.rm = TRUE))
+#   feat_notzerovar.vl <- !is.na(feat_var.vn) &
+#     (feat_var.vn >= var_thresh.n)
+#   # sum(feat_notzerovar.vl)
+#   
+#   feat_sel.vl <- feat_notna.vl & feat_notzerovar.vl
+#   
+#   stopifnot(length(feat_sel.vl) == ncol(input.mn) &&
+#               !any(is.na(feat_sel.vl)))
+#   
+#   feat_sel.vl
+#   
+# }
 
 .imputation_info <- function(eset,
                              set.c) {

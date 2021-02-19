@@ -11,13 +11,13 @@ testthat::test_that("dimensions", {
   #             apply(stat_intra_dim.mn, 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_dim.vc <- c("metabolomics_liver_c18hyper_pos|6287|42",
-                   "metabolomics_liver_hilic_neg|3145|42",
-                   "metabolomics_plasma_c18acqui_neg|2088|42",
-                   "metabolomics_plasma_c18acqui_pos|8542|42",
-                   "metabolomics_plasma_c18hyper_pos|4789|42",
-                   "metabolomics_plasma_hilic_neg|3133|42",
-                   "preclinical|231|42",
+  test_dim.vc <- c("metabolomics_liver_c18hypersil_pos|5665|42",
+                   "metabolomics_liver_hilic_neg|2866|42",
+                   "metabolomics_plasma_c18acquity_neg|1584|42",
+                   "metabolomics_plasma_c18acquity_pos|6104|42",
+                   "metabolomics_plasma_c18hypersil_pos|4788|42",
+                   "metabolomics_plasma_hilic_neg|3131|42",
+                   "preclinical|236|42",
                    "proteomics_liver|2187|42",
                    "proteomics_plasma|446|36")
   test_dim.mn <- sapply(test_dim.vc, function(x) unlist(strsplit(x, "|", fixed = TRUE))[c(2, 3)])
@@ -53,13 +53,13 @@ testthat::test_that("significant", {
   #             apply(stat_intra_signif.mn, 1, function(x) paste(x, collapse = "|")),
   #             sep = "|"),
   #       collapse = "', '")
-  test_signif.vc <- c("metabolomics_liver_c18hyper_pos|1757|NA|21",
-                      "metabolomics_liver_hilic_neg|865|NA|5",
-                      "metabolomics_plasma_c18acqui_neg|0|NA|1",
-                      "metabolomics_plasma_c18acqui_pos|1|NA|76",
-                      "metabolomics_plasma_c18hyper_pos|3|NA|81",
+  test_signif.vc <- c("metabolomics_liver_c18hypersil_pos|1608|NA|27",
+                      "metabolomics_liver_hilic_neg|826|NA|9",
+                      "metabolomics_plasma_c18acquity_neg|2|NA|1",
+                      "metabolomics_plasma_c18acquity_pos|13|NA|86",
+                      "metabolomics_plasma_c18hypersil_pos|3|NA|81",
                       "metabolomics_plasma_hilic_neg|585|NA|48",
-                      "preclinical|0|NA|1",
+                      "preclinical|2|NA|2",
                       "proteomics_liver|1|258|263",
                       "proteomics_plasma|7|NA|19")
   test_signif.mn <- sapply(test_signif.vc, function(x) unlist(strsplit(x, "|", fixed = TRUE))[2:4])
